@@ -85,4 +85,42 @@ export const contractService = {
       throw error;
     }
   },
+
+  /**
+   * Generar PDF del contrato
+   */
+  generatePdf: async (id: string): Promise<{ pdfUrl: string }> => {
+    try {
+      const response = await axiosInstance.post(`/api/v1/contracts/${id}/generate-pdf`);
+      return response.data;
+    } catch (error) {
+      console.error('Error generating contract PDF:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Descargar PDF del contrato
+   */
+  downloadPdf: async (id: string): Promise<void> => {
+    try {
+      const response = await axiosInstance.get(`/api/v1/contracts/${id}/pdf`, {
+        responseType: 'blob',
+      });
+
+      // Crear un enlace temporal para descargar el PDF
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contrato-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading contract PDF:', error);
+      throw error;
+    }
+  },
 };

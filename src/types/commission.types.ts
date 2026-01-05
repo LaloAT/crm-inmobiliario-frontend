@@ -1,32 +1,34 @@
 export interface Commission {
-  id: number;
-  dealId: number;
-  userId: number;
+  id: string;
+  dealId: string;
+  userId: string;
   amount: number;
-  currency: string;
-  percentage?: number;
-  status: CommissionStatus;
-  paidAt?: string;
+  percentage: number;
+  status: 'PENDING' | 'APPROVED' | 'PAID';
+  dueDate?: string;
+  paidDate?: string | null;
   notes?: string;
+  deal?: {
+    id: string;
+    title: string;
+  };
+  user?: {
+    id: string;
+    fullName: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
 
-export enum CommissionStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  PAID = 'PAID',
-  CANCELLED = 'CANCELLED'
-}
-
-export interface CreateCommissionRequest {
-  dealId: number;
-  userId: number;
+export interface CreateCommissionDto {
+  dealId: string;
+  userId: string;
   amount: number;
-  currency: string;
-  percentage?: number;
-  status?: CommissionStatus;
+  percentage: number;
+  status?: 'PENDING' | 'APPROVED' | 'PAID';
+  dueDate?: string;
+  paidDate?: string | null;
   notes?: string;
 }
 
-export interface UpdateCommissionRequest extends Partial<CreateCommissionRequest> {}
+export interface UpdateCommissionDto extends Partial<CreateCommissionDto> {}
