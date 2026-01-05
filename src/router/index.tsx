@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { LeadsPage } from '../pages/leads/LeadsPage';
+import { PropertiesPage } from '../pages/properties/PropertiesPage';
+import { DealsPage } from '../pages/deals/DealsPage';
 import { MainLayout } from '../components/layout';
 import { ProtectedRoute } from '../components/common/ProtectedRoute';
 
@@ -36,7 +38,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'properties',
-        element: <PlaceholderPage title="Propiedades" />,
+        element: <PropertiesPage />,
       },
       {
         path: 'leads',
@@ -44,7 +46,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'deals',
-        element: <PlaceholderPage title="Deals" />,
+        element: <DealsPage />,
       },
       {
         path: 'contracts',
