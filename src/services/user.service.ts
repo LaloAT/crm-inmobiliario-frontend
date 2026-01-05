@@ -1,33 +1,42 @@
 import axiosInstance from '../config/axios.config';
-import type { User, CreateUserDto, UpdateUserDto } from '../types/user.types';
+import type {
+  User,
+  CreateUserDto,
+  UpdateUserDto,
+  Subordinate,
+  UserFilters,
+  UserPaginatedResponse,
+} from '../types/user.types';
 
 export const userService = {
   /**
-   * Obtener todos los usuarios
+   * Obtener todos los usuarios con filtros
    */
-  getAll: async (params?: {
-    page?: number;
-    limit?: number;
-    role?: string;
-  }): Promise<{ data: User[]; total: number; page: number; limit: number }> => {
+  getAll: async (filters?: UserFilters): Promise<UserPaginatedResponse> => {
     try {
-      const response = await axiosInstance.get('/api/v1/users', { params });
+      const response = await axiosInstance.get('/api/v1/users', {
+        params: filters,
+      });
 
-      // Manejar diferentes estructuras de respuesta
-      if (Array.isArray(response.data)) {
+      // Si el API retorna paginado
+      if (response.data.items) {
         return {
-          data: response.data,
-          total: response.data.length,
-          page: 1,
-          limit: response.data.length,
+          items: response.data.items || [],
+          pageNumber: response.data.pageNumber || 1,
+          pageSize: response.data.pageSize || 10,
+          totalCount: response.data.totalCount || 0,
+          totalPages: response.data.totalPages || 0,
         };
       }
 
+      // Si retorna array directo (backwards compatibility)
+      const items = Array.isArray(response.data) ? response.data : [];
       return {
-        data: response.data.data || response.data.items || [],
-        total: response.data.total || 0,
-        page: response.data.page || 1,
-        limit: response.data.limit || 10,
+        items,
+        pageNumber: 1,
+        pageSize: items.length,
+        totalCount: items.length,
+        totalPages: 1,
       };
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -66,7 +75,7 @@ export const userService = {
    */
   update: async (id: string, data: UpdateUserDto): Promise<User> => {
     try {
-      const response = await axiosInstance.patch(`/api/v1/users/${id}`, data);
+      const response = await axiosInstance.put(`/api/v1/users/${id}`, data);
       return response.data;
     } catch (error) {
       console.error('Error updating user:', error);
@@ -82,6 +91,19 @@ export const userService = {
       await axiosInstance.delete(`/api/v1/users/${id}`);
     } catch (error) {
       console.error('Error deleting user:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener subordinados de un usuario
+   */
+  getSubordinates: async (id: string): Promise<Subordinate[]> => {
+    try {
+      const response = await axiosInstance.get(`/api/v1/users/${id}/subordinates`);
+      return response.data.items || response.data || [];
+    } catch (error) {
+      console.error('Error fetching subordinates:', error);
       throw error;
     }
   },

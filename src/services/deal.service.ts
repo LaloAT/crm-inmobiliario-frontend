@@ -1,23 +1,46 @@
 import axiosInstance from '../config/axios.config';
-import type { Deal, CreateDealDto, UpdateDealDto } from '../types/deal.types';
+import type {
+  Deal,
+  CreateDealDto,
+  UpdateDealDto,
+  ChangeDealStageDto,
+  DealActivity,
+  CreateDealActivityDto,
+  DealFilters,
+  DealPaginatedResponse,
+  DealStage,
+} from '../types/deal.types';
 
 export const dealService = {
   /**
-   * Obtener todos los deals
+   * Obtener todos los deals con filtros
    */
-  getAll: async (params?: {
-    stage?: number;
-    assignedToId?: string;
-  }): Promise<Deal[]> => {
+  getAll: async (filters?: DealFilters): Promise<DealPaginatedResponse> => {
     try {
-      const response = await axiosInstance.get('/api/v1/deals', { params });
+      const response = await axiosInstance.get('/api/v1/deals', {
+        params: filters,
+      });
 
-      // Manejar diferentes estructuras de respuesta
-      if (Array.isArray(response.data)) {
-        return response.data;
+      // Si el API retorna paginado
+      if (response.data.items) {
+        return {
+          items: response.data.items || [],
+          pageNumber: response.data.pageNumber || 1,
+          pageSize: response.data.pageSize || 10,
+          totalCount: response.data.totalCount || 0,
+          totalPages: response.data.totalPages || 0,
+        };
       }
 
-      return response.data.data || response.data.items || [];
+      // Si retorna array directo (backwards compatibility)
+      const items = Array.isArray(response.data) ? response.data : [];
+      return {
+        items,
+        pageNumber: 1,
+        pageSize: items.length,
+        totalCount: items.length,
+        totalPages: 1,
+      };
     } catch (error) {
       console.error('Error fetching deals:', error);
       throw error;
@@ -55,7 +78,7 @@ export const dealService = {
    */
   update: async (id: string, data: UpdateDealDto): Promise<Deal> => {
     try {
-      const response = await axiosInstance.patch(`/api/v1/deals/${id}`, data);
+      const response = await axiosInstance.put(`/api/v1/deals/${id}`, data);
       return response.data;
     } catch (error) {
       console.error('Error updating deal:', error);
@@ -64,11 +87,11 @@ export const dealService = {
   },
 
   /**
-   * Actualizar la etapa de un deal
+   * Cambiar la etapa de un deal
    */
-  updateStage: async (id: string, stage: number): Promise<Deal> => {
+  updateStage: async (id: string, data: ChangeDealStageDto): Promise<Deal> => {
     try {
-      const response = await axiosInstance.patch(`/api/v1/deals/${id}`, { stage });
+      const response = await axiosInstance.put(`/api/v1/deals/${id}/stage`, data);
       return response.data;
     } catch (error) {
       console.error('Error updating deal stage:', error);
@@ -89,20 +112,47 @@ export const dealService = {
   },
 
   /**
+   * Agregar una actividad a un deal
+   */
+  createActivity: async (dealId: string, data: CreateDealActivityDto): Promise<DealActivity> => {
+    try {
+      const response = await axiosInstance.post(`/api/v1/deals/${dealId}/activities`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating deal activity:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener actividades de un deal
+   */
+  getActivities: async (dealId: string): Promise<DealActivity[]> => {
+    try {
+      const response = await axiosInstance.get(`/api/v1/deals/${dealId}/activities`);
+      return response.data.items || response.data || [];
+    } catch (error) {
+      console.error('Error fetching deal activities:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Obtener deals agrupados por etapa (para Kanban)
    */
   getByStages: async (): Promise<Record<number, Deal[]>> => {
     try {
-      const deals = await dealService.getAll();
+      const response = await dealService.getAll();
+      const deals = response.items;
 
       // Agrupar deals por etapa
       const grouped: Record<number, Deal[]> = {
-        1: [], // NEW
-        2: [], // QUALIFIED
-        3: [], // PROPOSAL
-        4: [], // NEGOTIATION
-        5: [], // CLOSED_WON
-        6: [], // CLOSED_LOST
+        1: [], // NuevoContacto
+        2: [], // Calificacion
+        3: [], // Propuesta
+        4: [], // Negociacion
+        5: [], // Ganado
+        6: [], // Perdido
       };
 
       deals.forEach((deal) => {

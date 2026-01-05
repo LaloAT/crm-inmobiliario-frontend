@@ -1,52 +1,101 @@
+// ===========================
+// ENUMS (usando valores numéricos del API)
+// ===========================
+
+export const enum DevelopmentStatus {
+  Planeacion = 1,
+  EnProgreso = 2,
+  Completado = 3,
+  Cancelado = 4,
+}
+
+// ===========================
+// INTERFACES
+// ===========================
+
 export interface Development {
-  id: number;
+  id: string;
+  organizationId: string;
   name: string;
   description?: string;
   location: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   totalLots: number;
-  availableLots: number;
+  totalArea?: number;
   startDate?: string;
   endDate?: string;
   status: DevelopmentStatus;
-  organizationId: number;
-  lots: Lot[];
+  // Map/Layout
+  mapImageUrl?: string;
+  // Statistics (computed)
+  availableLots?: number;
+  reservedLots?: number;
+  soldLots?: number;
+  // Metadata
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export enum DevelopmentStatus {
-  PLANNING = 'PLANNING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
-}
-
-export interface Lot {
-  id: number;
-  lotNumber: string;
-  area: number;
-  price: number;
-  status: LotStatus;
-  developmentId: number;
-  development?: Development;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export enum LotStatus {
-  AVAILABLE = 'AVAILABLE',
-  RESERVED = 'RESERVED',
-  SOLD = 'SOLD'
-}
-
-export interface CreateDevelopmentRequest {
+export interface CreateDevelopmentDto {
+  organizationId: string;
   name: string;
   description?: string;
   location: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   totalLots: number;
+  totalArea?: number;
   startDate?: string;
   endDate?: string;
-  status: DevelopmentStatus;
+  status?: DevelopmentStatus;
+  mapImageUrl?: string;
 }
 
-export interface UpdateDevelopmentRequest extends Partial<CreateDevelopmentRequest> {}
+export interface UpdateDevelopmentDto extends Partial<CreateDevelopmentDto> {}
+
+// ===========================
+// FILTROS PARA CONSULTAS
+// ===========================
+
+export interface DevelopmentFilters {
+  pageNumber?: number;
+  pageSize?: number;
+  status?: DevelopmentStatus;
+  search?: string;
+}
+
+// ===========================
+// RESPUESTA PAGINADA
+// ===========================
+
+export interface DevelopmentPaginatedResponse {
+  items: Development[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+// ===========================
+// HELPERS PARA LABELS
+// ===========================
+
+export const DevelopmentStatusLabels: Record<DevelopmentStatus, string> = {
+  [DevelopmentStatus.Planeacion]: 'Planeación',
+  [DevelopmentStatus.EnProgreso]: 'En Progreso',
+  [DevelopmentStatus.Completado]: 'Completado',
+  [DevelopmentStatus.Cancelado]: 'Cancelado',
+};
+
+export const DevelopmentStatusColors: Record<DevelopmentStatus, string> = {
+  [DevelopmentStatus.Planeacion]: 'bg-blue-100 text-blue-800',
+  [DevelopmentStatus.EnProgreso]: 'bg-yellow-100 text-yellow-800',
+  [DevelopmentStatus.Completado]: 'bg-green-100 text-green-800',
+  [DevelopmentStatus.Cancelado]: 'bg-red-100 text-red-800',
+};

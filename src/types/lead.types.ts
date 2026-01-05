@@ -1,69 +1,134 @@
+// ===========================
+// ENUMS (usando valores numéricos del API)
+// ===========================
+
+export const enum LeadSource {
+  SitioWeb = 1,
+  Referido = 2,
+  RedesSociales = 3,
+  Publicidad = 4,
+  WalkIn = 5,
+  LlamadaTelefonica = 6,
+  Email = 7,
+}
+
+export const enum LeadStatus {
+  Nuevo = 1,
+  Contactado = 2,
+  Calificado = 3,
+  NoCalificado = 4,
+  Convertido = 5,
+  Perdido = 6,
+}
+
+export const enum InterestedInType {
+  Comprar = 1,
+  Rentar = 2,
+  Ambos = 3,
+}
+
+// ===========================
+// INTERFACES
+// ===========================
+
 export interface Lead {
-  id: number;
+  id: string;
+  organizationId: string;
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
   source: LeadSource;
   status: LeadStatus;
-  preferences?: LeadPreferences;
+  interestedIn?: InterestedInType;
   notes?: string;
-  assignedTo?: number;
-  assignedUser?: {
-    id: number;
-    firstName: string;
-    lastName: string;
+  budget?: number;
+  // Assignment
+  ownerId?: string;
+  owner?: {
+    id: string;
+    fullName: string;
     email: string;
   };
-  organizationId: number;
-  createdBy: number;
-  isActive: boolean;
+  // Metadata
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export enum LeadSource {
-  WEBSITE = 'WEBSITE',
-  REFERRAL = 'REFERRAL',
-  SOCIAL_MEDIA = 'SOCIAL_MEDIA',
-  ADVERTISING = 'ADVERTISING',
-  WALK_IN = 'WALK_IN',
-  PHONE_CALL = 'PHONE_CALL',
-  EMAIL = 'EMAIL',
-  OTHER = 'OTHER'
-}
-
-export enum LeadStatus {
-  NEW = 'NEW',
-  CONTACTED = 'CONTACTED',
-  QUALIFIED = 'QUALIFIED',
-  UNQUALIFIED = 'UNQUALIFIED',
-  CONVERTED = 'CONVERTED',
-  LOST = 'LOST'
-}
-
-export interface LeadPreferences {
-  propertyType?: string[];
-  minPrice?: number;
-  maxPrice?: number;
-  minArea?: number;
-  maxArea?: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  locations?: string[];
-  features?: string[];
-}
-
-export interface CreateLeadRequest {
+export interface CreateLeadDto {
+  organizationId: string;
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
   source: LeadSource;
   status?: LeadStatus;
-  preferences?: LeadPreferences;
+  interestedIn?: InterestedInType;
   notes?: string;
-  assignedTo?: number;
+  budget?: number;
+  ownerId?: string;
 }
 
-export interface UpdateLeadRequest extends Partial<CreateLeadRequest> {}
+export interface UpdateLeadDto extends Partial<CreateLeadDto> {}
+
+export interface AssignLeadDto {
+  newOwnerId: string;
+  reason?: string;
+}
+
+// ===========================
+// FILTROS PARA CONSULTAS
+// ===========================
+
+export interface LeadFilters {
+  pageNumber?: number;
+  pageSize?: number;
+  ownerId?: string;
+  source?: LeadSource;
+  status?: LeadStatus;
+  fromDate?: string;
+  toDate?: string;
+  search?: string;
+}
+
+// ===========================
+// RESPUESTA PAGINADA
+// ===========================
+
+export interface LeadPaginatedResponse {
+  items: Lead[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+// ===========================
+// HELPERS PARA LABELS
+// ===========================
+
+export const LeadSourceLabels: Record<LeadSource, string> = {
+  [LeadSource.SitioWeb]: 'Sitio Web',
+  [LeadSource.Referido]: 'Referido',
+  [LeadSource.RedesSociales]: 'Redes Sociales',
+  [LeadSource.Publicidad]: 'Publicidad',
+  [LeadSource.WalkIn]: 'Walk-In',
+  [LeadSource.LlamadaTelefonica]: 'Llamada Telefónica',
+  [LeadSource.Email]: 'Email',
+};
+
+export const LeadStatusLabels: Record<LeadStatus, string> = {
+  [LeadStatus.Nuevo]: 'Nuevo',
+  [LeadStatus.Contactado]: 'Contactado',
+  [LeadStatus.Calificado]: 'Calificado',
+  [LeadStatus.NoCalificado]: 'No Calificado',
+  [LeadStatus.Convertido]: 'Convertido',
+  [LeadStatus.Perdido]: 'Perdido',
+};
+
+export const InterestedInTypeLabels: Record<InterestedInType, string> = {
+  [InterestedInType.Comprar]: 'Comprar',
+  [InterestedInType.Rentar]: 'Rentar',
+  [InterestedInType.Ambos]: 'Ambos',
+};

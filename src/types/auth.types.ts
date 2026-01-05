@@ -40,7 +40,7 @@ export interface User {
   updatedAt?: string;
 }
 
-export enum UserRole {
+export const enum UserRole {
   ADMIN = 'ADMIN',
   MANAGER = 'MANAGER',
   AGENT = 'AGENT',

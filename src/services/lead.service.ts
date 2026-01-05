@@ -1,35 +1,29 @@
 import axiosInstance from '../config/axios.config';
-import type { Lead, CreateLeadDto, UpdateLeadDto } from '../types/lead.types';
+import type {
+  Lead,
+  CreateLeadDto,
+  UpdateLeadDto,
+  AssignLeadDto,
+  LeadFilters,
+  LeadPaginatedResponse,
+} from '../types/lead.types';
 
 export const leadService = {
   /**
-   * Obtener todos los leads
+   * Obtener todos los leads con filtros
    */
-  getAll: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: number;
-  }): Promise<{ data: Lead[]; total: number; page: number; limit: number }> => {
+  getAll: async (filters?: LeadFilters): Promise<LeadPaginatedResponse> => {
     try {
-      const response = await axiosInstance.get('/api/v1/leads', { params });
+      const response = await axiosInstance.get('/api/v1/leads', {
+        params: filters,
+      });
 
-      // Manejar diferentes estructuras de respuesta
-      if (Array.isArray(response.data)) {
-        return {
-          data: response.data,
-          total: response.data.length,
-          page: 1,
-          limit: response.data.length,
-        };
-      }
-
-      // Si viene paginado
       return {
-        data: response.data.data || response.data.items || [],
-        total: response.data.total || 0,
-        page: response.data.page || 1,
-        limit: response.data.limit || 10,
+        items: response.data.items || [],
+        pageNumber: response.data.pageNumber || 1,
+        pageSize: response.data.pageSize || 10,
+        totalCount: response.data.totalCount || 0,
+        totalPages: response.data.totalPages || 0,
       };
     } catch (error) {
       console.error('Error fetching leads:', error);
@@ -68,7 +62,7 @@ export const leadService = {
    */
   update: async (id: string, data: UpdateLeadDto): Promise<Lead> => {
     try {
-      const response = await axiosInstance.patch(`/api/v1/leads/${id}`, data);
+      const response = await axiosInstance.put(`/api/v1/leads/${id}`, data);
       return response.data;
     } catch (error) {
       console.error('Error updating lead:', error);
@@ -84,6 +78,19 @@ export const leadService = {
       await axiosInstance.delete(`/api/v1/leads/${id}`);
     } catch (error) {
       console.error('Error deleting lead:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Asignar un lead a otro usuario
+   */
+  assign: async (id: string, data: AssignLeadDto): Promise<Lead> => {
+    try {
+      const response = await axiosInstance.post(`/api/v1/leads/${id}/assign`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning lead:', error);
       throw error;
     }
   },

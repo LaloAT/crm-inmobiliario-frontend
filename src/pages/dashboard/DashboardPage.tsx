@@ -9,19 +9,16 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
 
-  // Obtener estadísticas del backend
-  const { data: stats, isLoading, isError } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: dashboardService.getStats,
+  // Obtener datos completos del dashboard
+  const { data: dashboard, isLoading, isError } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: dashboardService.getDashboard,
     refetchInterval: 60000, // Refrescar cada minuto
   });
 
-  // Obtener actividades recientes
-  const { data: activities = [] } = useQuery({
-    queryKey: ['recent-activities'],
-    queryFn: dashboardService.getRecentActivities,
-    refetchInterval: 60000,
-  });
+  // Extraer datos del dashboard
+  const stats = dashboard || {};
+  const activities = dashboard?.recentActivities || [];
 
   // Formatear números
   const formatNumber = (num: number) => {

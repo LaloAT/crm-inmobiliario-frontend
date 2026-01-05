@@ -43,15 +43,17 @@ export const DealsPage: React.FC = () => {
   );
 
   // Fetch deals
-  const { data: deals = [], isLoading } = useQuery({
+  const { data: dealsResponse, isLoading } = useQuery({
     queryKey: ['deals'],
     queryFn: () => dealService.getAll(),
   });
 
+  const deals = dealsResponse?.items || [];
+
   // Update stage mutation
   const updateStageMutation = useMutation({
     mutationFn: ({ id, stage }: { id: string; stage: number }) =>
-      dealService.updateStage(id, stage),
+      dealService.updateStage(id, { newStage: stage }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
     },

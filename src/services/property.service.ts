@@ -1,39 +1,29 @@
 import axiosInstance from '../config/axios.config';
-import type { Property, CreatePropertyDto, UpdatePropertyDto } from '../types/property.types';
+import type {
+  Property,
+  CreatePropertyDto,
+  UpdatePropertyDto,
+  PropertyFilters,
+  PropertyPaginatedResponse,
+} from '../types/property.types';
 
 export const propertyService = {
   /**
-   * Obtener todas las propiedades
+   * Obtener todas las propiedades con filtros
    */
-  getAll: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    propertyType?: string;
-    listingType?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    status?: string;
-  }): Promise<{ data: Property[]; total: number; page: number; limit: number }> => {
+  getAll: async (filters?: PropertyFilters): Promise<PropertyPaginatedResponse> => {
     try {
-      const response = await axiosInstance.get('/api/v1/properties', { params });
+      const response = await axiosInstance.get('/api/v1/properties', {
+        params: filters,
+      });
 
-      // Manejar diferentes estructuras de respuesta
-      if (Array.isArray(response.data)) {
-        return {
-          data: response.data,
-          total: response.data.length,
-          page: 1,
-          limit: response.data.length,
-        };
-      }
-
-      // Si viene paginado
+      // El API retorna: { items, pageNumber, pageSize, totalCount, totalPages }
       return {
-        data: response.data.data || response.data.items || [],
-        total: response.data.total || 0,
-        page: response.data.page || 1,
-        limit: response.data.limit || 10,
+        items: response.data.items || [],
+        pageNumber: response.data.pageNumber || 1,
+        pageSize: response.data.pageSize || 10,
+        totalCount: response.data.totalCount || 0,
+        totalPages: response.data.totalPages || 0,
       };
     } catch (error) {
       console.error('Error fetching properties:', error);
@@ -72,7 +62,7 @@ export const propertyService = {
    */
   update: async (id: string, data: UpdatePropertyDto): Promise<Property> => {
     try {
-      const response = await axiosInstance.patch(`/api/v1/properties/${id}`, data);
+      const response = await axiosInstance.put(`/api/v1/properties/${id}`, data);
       return response.data;
     } catch (error) {
       console.error('Error updating property:', error);
@@ -81,7 +71,7 @@ export const propertyService = {
   },
 
   /**
-   * Eliminar una propiedad
+   * Eliminar una propiedad (soft delete)
    */
   delete: async (id: string): Promise<void> => {
     try {
