@@ -19,8 +19,8 @@ export const ContractsPage: React.FC = () => {
     queryKey: ['contracts', currentPage, statusFilter],
     queryFn: () =>
       contractService.getAll({
-        page: currentPage,
-        limit: 10,
+        pageNumber: currentPage,
+        pageSize: 10,
         status: statusFilter || undefined,
       }),
   });
@@ -96,8 +96,8 @@ export const ContractsPage: React.FC = () => {
     });
   };
 
-  const contracts = contractsData?.data || [];
-  const totalPages = Math.ceil((contractsData?.total || 0) / (contractsData?.limit || 10));
+  const contracts = contractsData?.items || [];
+  const totalPages = contractsData?.totalPages || 1;
 
   return (
     <div className="space-y-6">

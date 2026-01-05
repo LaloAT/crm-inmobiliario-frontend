@@ -18,8 +18,8 @@ export const CommissionsPage: React.FC = () => {
     queryKey: ['commissions', currentPage, statusFilter],
     queryFn: () =>
       commissionService.getAll({
-        page: currentPage,
-        limit: 15,
+        pageNumber: currentPage,
+        pageSize: 15,
         status: statusFilter || undefined,
       }),
   });
@@ -82,8 +82,8 @@ export const CommissionsPage: React.FC = () => {
     return new Date(dateString).toLocaleDateString('es-MX');
   };
 
-  const commissions = commissionsData?.data || [];
-  const totalPages = Math.ceil((commissionsData?.total || 0) / (commissionsData?.limit || 15));
+  const commissions = commissionsData?.items || [];
+  const totalPages = commissionsData?.totalPages || 1;
 
   // Calculate summary stats
   const stats = {

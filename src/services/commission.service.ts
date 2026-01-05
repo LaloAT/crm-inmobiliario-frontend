@@ -1,35 +1,20 @@
 import axiosInstance from '../config/axios.config';
-import type { Commission, CreateCommissionDto, UpdateCommissionDto } from '../types/commission.types';
+import type {
+  Commission,
+  CreateCommissionDto,
+  UpdateCommissionDto,
+  CommissionFilters,
+  CommissionPaginatedResponse
+} from '../types/commission.types';
 
 export const commissionService = {
   /**
    * Obtener todas las comisiones
    */
-  getAll: async (params?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    userId?: string;
-  }): Promise<{ data: Commission[]; total: number; page: number; limit: number }> => {
+  getAll: async (filters?: CommissionFilters): Promise<CommissionPaginatedResponse> => {
     try {
-      const response = await axiosInstance.get('/api/v1/commissions', { params });
-
-      // Manejar diferentes estructuras de respuesta
-      if (Array.isArray(response.data)) {
-        return {
-          data: response.data,
-          total: response.data.length,
-          page: 1,
-          limit: response.data.length,
-        };
-      }
-
-      return {
-        data: response.data.data || response.data.items || [],
-        total: response.data.total || 0,
-        page: response.data.page || 1,
-        limit: response.data.limit || 10,
-      };
+      const response = await axiosInstance.get('/api/v1/commissions', { params: filters });
+      return response.data;
     } catch (error) {
       console.error('Error fetching commissions:', error);
       throw error;
@@ -108,29 +93,10 @@ export const commissionService = {
   /**
    * Obtener mis comisiones (del usuario actual)
    */
-  getMy: async (params?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-  }): Promise<{ data: Commission[]; total: number; page: number; limit: number }> => {
+  getMy: async (filters?: CommissionFilters): Promise<CommissionPaginatedResponse> => {
     try {
-      const response = await axiosInstance.get('/api/v1/commissions/my', { params });
-
-      if (Array.isArray(response.data)) {
-        return {
-          data: response.data,
-          total: response.data.length,
-          page: 1,
-          limit: response.data.length,
-        };
-      }
-
-      return {
-        data: response.data.data || response.data.items || [],
-        total: response.data.total || 0,
-        page: response.data.page || 1,
-        limit: response.data.limit || 10,
-      };
+      const response = await axiosInstance.get('/api/v1/commissions/my', { params: filters });
+      return response.data;
     } catch (error) {
       console.error('Error fetching my commissions:', error);
       throw error;

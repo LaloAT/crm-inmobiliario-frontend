@@ -1,34 +1,20 @@
 import axiosInstance from '../config/axios.config';
-import type { Organization, CreateOrganizationDto, UpdateOrganizationDto } from '../types/organization.types';
+import type {
+  Organization,
+  CreateOrganizationDto,
+  UpdateOrganizationDto,
+  OrganizationFilters,
+  OrganizationPaginatedResponse
+} from '../types/organization.types';
 
 export const organizationService = {
   /**
    * Obtener todas las organizaciones
    */
-  getAll: async (params?: {
-    page?: number;
-    limit?: number;
-    type?: string;
-  }): Promise<{ data: Organization[]; total: number; page: number; limit: number }> => {
+  getAll: async (filters?: OrganizationFilters): Promise<OrganizationPaginatedResponse> => {
     try {
-      const response = await axiosInstance.get('/api/v1/organizations', { params });
-
-      // Manejar diferentes estructuras de respuesta
-      if (Array.isArray(response.data)) {
-        return {
-          data: response.data,
-          total: response.data.length,
-          page: 1,
-          limit: response.data.length,
-        };
-      }
-
-      return {
-        data: response.data.data || response.data.items || [],
-        total: response.data.total || 0,
-        page: response.data.page || 1,
-        limit: response.data.limit || 10,
-      };
+      const response = await axiosInstance.get('/api/v1/organizations', { params: filters });
+      return response.data;
     } catch (error) {
       console.error('Error fetching organizations:', error);
       throw error;

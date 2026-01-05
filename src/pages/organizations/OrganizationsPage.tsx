@@ -14,7 +14,7 @@ export const OrganizationsPage: React.FC = () => {
 
   const { data: orgsData, isLoading } = useQuery({
     queryKey: ['organizations'],
-    queryFn: () => organizationService.getAll({ limit: 100 }),
+    queryFn: () => organizationService.getAll({ pageSize: 100 }),
   });
 
   const deleteMutation = useMutation({
@@ -34,7 +34,7 @@ export const OrganizationsPage: React.FC = () => {
     }
   };
 
-  const organizations = orgsData?.data || [];
+  const organizations = orgsData?.items || [];
 
   return (
     <div className="space-y-6">

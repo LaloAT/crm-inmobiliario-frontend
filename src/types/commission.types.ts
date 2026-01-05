@@ -32,3 +32,19 @@ export interface CreateCommissionDto {
 }
 
 export interface UpdateCommissionDto extends Partial<CreateCommissionDto> {}
+
+export interface CommissionFilters {
+  pageNumber?: number;
+  pageSize?: number;
+  status?: string;
+  userId?: string;
+  dealId?: string;
+}
+
+export interface CommissionPaginatedResponse {
+  items: Commission[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
