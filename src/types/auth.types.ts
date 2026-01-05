@@ -20,6 +20,7 @@ export interface AuthResponse {
   organizationId: string;
   accessToken: string;
   refreshToken: string;
+  user?: User;
 }
 
 export interface RefreshTokenRequest {
@@ -40,7 +41,7 @@ export interface User {
   updatedAt?: string;
 }
 
-export const enum UserRole {
+export enum UserRole {
   ADMIN = 'ADMIN',
   MANAGER = 'MANAGER',
   AGENT = 'AGENT',

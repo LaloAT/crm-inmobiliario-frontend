@@ -3,7 +3,15 @@
     "allow": [
       "Bash(npm run build:*)",
       "Bash(find:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(powershell -Command \"\\(Get-Content ''contract.types.ts''\\) -replace ''export const enum'', ''export enum'' | Set-Content ''contract.types.ts''\")",
+      "Bash(powershell -Command \"\\(Get-Content ''deal.types.ts''\\) -replace ''export const enum'', ''export enum'' | Set-Content ''deal.types.ts''\")",
+      "Bash(powershell -Command \"\\(Get-Content ''development.types.ts''\\) -replace ''export const enum'', ''export enum'' | Set-Content ''development.types.ts''\")",
+      "Bash(powershell -Command \"\\(Get-Content ''lead.types.ts''\\) -replace ''export const enum'', ''export enum'' | Set-Content ''lead.types.ts''\")",
+      "Bash(powershell -Command \"\\(Get-Content ''lot.types.ts''\\) -replace ''export const enum'', ''export enum'' | Set-Content ''lot.types.ts''\")",
+      "Bash(powershell -Command \"\\(Get-Content ''organization.types.ts''\\) -replace ''export const enum'', ''export enum'' | Set-Content ''organization.types.ts''\")",
+      "Bash(powershell -Command \"\\(Get-Content ''property.types.ts''\\) -replace ''export const enum'', ''export enum'' | Set-Content ''property.types.ts''\")",
+      "Bash(powershell -Command \"\\(Get-Content ''user.types.ts''\\) -replace ''export const enum'', ''export enum'' | Set-Content ''user.types.ts''\")"
     ]
   }
 }

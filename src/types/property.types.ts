@@ -2,13 +2,13 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum OperationType {
+export enum OperationType {
   Venta = 1,
   Renta = 2,
   VentaRenta = 3,
 }
 
-export const enum PropertyType {
+export enum PropertyType {
   Casa = 1,
   Departamento = 2,
   Terreno = 3,
@@ -19,7 +19,7 @@ export const enum PropertyType {
   Otro = 8,
 }
 
-export const enum PropertyStatus {
+export enum PropertyStatus {
   Disponible = 1,
   Apartado = 2,
   Vendido = 3,
@@ -27,7 +27,7 @@ export const enum PropertyStatus {
   NoDisponible = 5,
 }
 
-export const enum PublishStatus {
+export enum PublishStatus {
   Borrador = 1,
   Publicado = 2,
   Despublicado = 3,

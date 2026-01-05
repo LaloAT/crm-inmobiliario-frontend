@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User, LoginRequest, RegisterRequest } from '../types';
 import { authService } from '../services/auth.service';
 
@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterRequest): Promise<void> => {
     try {
       const response = await authService.register(userData);
-      setUser(response.user);
+      setUser(response.user || null);
     } catch (error) {
       console.error('Register error:', error);
       throw error;

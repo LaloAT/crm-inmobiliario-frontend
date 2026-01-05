@@ -2,7 +2,7 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum DealStage {
+export enum DealStage {
   NuevoContacto = 1,
   Calificacion = 2,
   Propuesta = 3,
@@ -11,13 +11,13 @@ export const enum DealStage {
   Perdido = 6,
 }
 
-export const enum DealOperation {
+export enum DealOperation {
   Venta = 1,
   Renta = 2,
   VentaRenta = 3,
 }
 
-export const enum ActivityType {
+export enum ActivityType {
   Llamada = 1,
   Email = 2,
   Reunion = 3,

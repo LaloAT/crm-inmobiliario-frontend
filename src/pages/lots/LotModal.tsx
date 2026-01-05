@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Loader2 } from 'lucide-react';
@@ -7,7 +7,8 @@ import { Button, Input } from '../../components/ui';
 import { lotSchema, type LotFormData } from '../../schemas/lot.schema';
 import { lotService } from '../../services/lot.service';
 import { developmentService } from '../../services/development.service';
-import type { Lot } from '../../types/lot.types';
+import type { Lot, Development } from '../../types';
+import { LotStatus, LotStatusLabels } from '../../types/lot.types';
 
 interface LotModalProps {
   isOpen: boolean;
@@ -27,17 +28,17 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
   } = useForm<LotFormData>({
     resolver: zodResolver(lotSchema),
     defaultValues: {
-      status: 'AVAILABLE',
+      status: LotStatus.Disponible,
     },
   });
 
   // Fetch developments for dropdown
   const { data: developmentsData } = useQuery({
     queryKey: ['developments'],
-    queryFn: () => developmentService.getAll({ limit: 100 }),
+    queryFn: () => developmentService.getAll({ pageNumber: 1, pageSize: 100 }),
   });
 
-  const developments = developmentsData?.data || [];
+  const developments = developmentsData?.items || [];
 
   // Reset form when lot changes
   useEffect(() => {
@@ -45,23 +46,28 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
       reset({
         lotNumber: lot.lotNumber,
         block: lot.block || '',
+        manzana: lot.manzana || '',
         area: lot.area,
+        frontMeters: lot.frontMeters,
+        depthMeters: lot.depthMeters,
         price: lot.price,
-        dimensions: lot.dimensions || '',
-        location: lot.location || '',
+        currency: lot.currency || 'MXN',
         status: lot.status,
+        positionX: lot.positionX,
+        positionY: lot.positionY,
         developmentId: lot.developmentId,
+        assignedUserId: lot.assignedUserId,
         notes: lot.notes || '',
       });
     } else {
       reset({
         lotNumber: '',
         block: '',
+        manzana: '',
         area: 0,
         price: 0,
-        dimensions: '',
-        location: '',
-        status: 'AVAILABLE',
+        currency: 'MXN',
+        status: LotStatus.Disponible,
         developmentId: '',
         notes: '',
       });
@@ -88,7 +94,7 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
     },
   });
 
-  const onSubmit = (data: LotFormData) => {
+  const onSubmit: SubmitHandler<LotFormData> = (data) => {
     if (isEditing) {
       updateMutation.mutate(data);
     } else {
@@ -137,7 +143,7 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="">Seleccionar desarrollo...</option>
-                  {developments.map((dev) => (
+                  {developments.map((dev: Development) => (
                     <option key={dev.id} value={dev.id}>
                       {dev.name}
                     </option>
@@ -158,11 +164,18 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
                 />
 
                 <Input
-                  label="Manzana"
+                  label="Bloque"
                   {...register('block')}
                   error={errors.block?.message}
                 />
               </div>
+
+              {/* Manzana */}
+              <Input
+                label="Manzana"
+                {...register('manzana')}
+                error={errors.manzana?.message}
+              />
 
               {/* Area and Price */}
               <div className="grid grid-cols-2 gap-4">
@@ -185,18 +198,39 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
                 />
               </div>
 
-              {/* Dimensions and Location */}
+              {/* Dimensions - Front and Depth Meters */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Dimensiones (ej: 10x20)"
-                  {...register('dimensions')}
-                  error={errors.dimensions?.message}
+                  label="Frente (metros)"
+                  type="number"
+                  step="0.01"
+                  {...register('frontMeters', { valueAsNumber: true })}
+                  error={errors.frontMeters?.message}
                 />
 
                 <Input
-                  label="Ubicación dentro del desarrollo"
-                  {...register('location')}
-                  error={errors.location?.message}
+                  label="Fondo (metros)"
+                  type="number"
+                  step="0.01"
+                  {...register('depthMeters', { valueAsNumber: true })}
+                  error={errors.depthMeters?.message}
+                />
+              </div>
+
+              {/* Position on Map */}
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Posición X en Mapa"
+                  type="number"
+                  {...register('positionX', { valueAsNumber: true })}
+                  error={errors.positionX?.message}
+                />
+
+                <Input
+                  label="Posición Y en Mapa"
+                  type="number"
+                  {...register('positionY', { valueAsNumber: true })}
+                  error={errors.positionY?.message}
                 />
               </div>
 
@@ -206,12 +240,12 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
                   Estado <span className="text-red-500">*</span>
                 </label>
                 <select
-                  {...register('status')}
+                  {...register('status', { valueAsNumber: true })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="AVAILABLE">Disponible</option>
-                  <option value="RESERVED">Reservado</option>
-                  <option value="SOLD">Vendido</option>
+                  {Object.entries(LotStatusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
                 </select>
                 {errors.status && (
                   <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>

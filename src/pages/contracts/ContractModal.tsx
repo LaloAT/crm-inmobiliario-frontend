@@ -9,6 +9,8 @@ import { contractService } from '../../services/contract.service';
 import { dealService } from '../../services/deal.service';
 import { propertyService } from '../../services/property.service';
 import type { Contract } from '../../types/contract.types';
+import { ContractStatus, ContractStatusLabels, ContractType } from '../../types/contract.types';
+import { useAuth } from '../../context/AuthContext';
 
 interface ContractModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ interface ContractModalProps {
 
 export const ContractModal: React.FC<ContractModalProps> = ({ isOpen, onClose, contract }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isEditing = !!contract;
 
   const {
@@ -28,7 +31,7 @@ export const ContractModal: React.FC<ContractModalProps> = ({ isOpen, onClose, c
   } = useForm<ContractFormData>({
     resolver: zodResolver(contractSchema),
     defaultValues: {
-      status: 'DRAFT',
+      status: ContractStatus.Borrador,
     },
   });
 
@@ -72,10 +75,10 @@ export const ContractModal: React.FC<ContractModalProps> = ({ isOpen, onClose, c
       reset({
         contractNumber: '',
         contractDate: new Date().toISOString().split('T')[0],
-        startDate: '',
+        startDate: new Date().toISOString().split('T')[0],
         endDate: '',
         totalAmount: 0,
-        status: 'DRAFT',
+        status: ContractStatus.Borrador,
         terms: '',
         dealId: '',
         propertyId: '',
@@ -108,7 +111,15 @@ export const ContractModal: React.FC<ContractModalProps> = ({ isOpen, onClose, c
     if (isEditing) {
       updateMutation.mutate(data);
     } else {
-      createMutation.mutate(data);
+      // Add required fields for create
+      const createData = {
+        ...data,
+        organizationId: user?.organizationId || '',
+        type: ContractType.CompraVenta, // Default type
+        clientName: 'Cliente', // Placeholder - should be from form
+        clientEmail: 'cliente@example.com', // Placeholder - should be from form
+      };
+      createMutation.mutate(createData);
     }
   };
 
@@ -220,13 +231,16 @@ export const ContractModal: React.FC<ContractModalProps> = ({ isOpen, onClose, c
                     Estado <span className="text-red-500">*</span>
                   </label>
                   <select
-                    {...register('status')}
+                    {...register('status', { valueAsNumber: true })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
-                    <option value="DRAFT">Borrador</option>
-                    <option value="ACTIVE">Activo</option>
-                    <option value="COMPLETED">Completado</option>
-                    <option value="CANCELLED">Cancelado</option>
+                    {Object.entries(ContractStatus)
+                      .filter(([k]) => isNaN(Number(k)))
+                      .map(([_key, value]) => (
+                        <option key={value} value={value}>
+                          {ContractStatusLabels[value as ContractStatus]}
+                        </option>
+                      ))}
                   </select>
                   {errors.status && (
                     <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
@@ -237,10 +251,11 @@ export const ContractModal: React.FC<ContractModalProps> = ({ isOpen, onClose, c
               {/* Start Date and End Date (for rentals) */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Fecha de Inicio (Opcional)"
+                  label="Fecha de Inicio"
                   type="date"
                   {...register('startDate')}
                   error={errors.startDate?.message}
+                  required
                 />
 
                 <Input

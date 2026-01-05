@@ -165,9 +165,9 @@ export const ShiftsPage: React.FC = () => {
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayShifts = calendarData?.filter(
-        (shift) => shift.shiftDate.split('T')[0] === dateStr
-      ) || [];
+      const dayShifts = (Array.isArray(calendarData) ? calendarData : []).filter(
+        (shift: Shift) => shift.shiftDate.split('T')[0] === dateStr
+      );
 
       days.push(
         <div
@@ -176,7 +176,7 @@ export const ShiftsPage: React.FC = () => {
         >
           <div className="font-medium text-sm text-gray-900 mb-1">{day}</div>
           <div className="space-y-1">
-            {dayShifts.slice(0, 3).map((shift) => (
+            {dayShifts.slice(0, 3).map((shift: Shift) => (
               <div
                 key={shift.id}
                 className="text-xs px-2 py-1 rounded cursor-pointer bg-primary-50 text-primary-700 truncate"

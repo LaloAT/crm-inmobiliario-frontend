@@ -1,12 +1,23 @@
 import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Loader2 } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { propertySchema, type PropertyFormData } from '../../schemas/property.schema';
 import { propertyService } from '../../services/property.service';
+import { useAuth } from '../../context/AuthContext';
 import type { Property } from '../../types/property.types';
+import {
+  OperationType,
+  PropertyType,
+  PropertyStatus,
+  PublishStatus,
+  OperationTypeLabels,
+  PropertyTypeLabels,
+  PropertyStatusLabels,
+  PublishStatusLabels
+} from '../../types/property.types';
 
 interface PropertyModalProps {
   isOpen: boolean;
@@ -16,6 +27,7 @@ interface PropertyModalProps {
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, property }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isEditing = !!property;
 
   const {
@@ -23,12 +35,15 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<PropertyFormData>({
+  } = useForm({
     resolver: zodResolver(propertySchema),
     defaultValues: {
-      status: 'AVAILABLE',
-      images: [],
-      features: [],
+      status: PropertyStatus.Disponible,
+      publishStatus: PublishStatus.Borrador,
+      operation: OperationType.Venta,
+      type: PropertyType.Casa,
+      currency: 'MXN',
+      isLienFree: false,
     },
   });
 
@@ -38,44 +53,72 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
       reset({
         title: property.title,
         description: property.description || '',
-        address: property.address,
+        operation: property.operation,
+        type: property.type,
+        status: property.status,
+        publishStatus: property.publishStatus,
         price: property.price,
-        area: property.area,
+        currency: property.currency || 'MXN',
+        pricePerSquareMeter: property.pricePerSquareMeter,
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
+        halfBathrooms: property.halfBathrooms,
         parkingSpaces: property.parkingSpaces,
-        propertyType: property.propertyType,
-        listingType: property.listingType,
-        status: property.status,
-        images: property.images || [],
-        developmentId: property.developmentId || null,
-        lotId: property.lotId || null,
-        features: property.features || [],
+        constructionArea: property.constructionArea,
+        landArea: property.landArea,
+        totalArea: property.totalArea,
+        yearBuilt: property.yearBuilt,
+        // Address fields
+        addressStreet: property.addressStreet || '',
+        addressNumber: property.addressNumber || '',
+        addressInterior: property.addressInterior || '',
+        addressColony: property.addressColony || '',
+        addressCity: property.addressCity || '',
+        addressState: property.addressState || '',
+        addressZipCode: property.addressZipCode || '',
+        latitude: property.latitude,
+        longitude: property.longitude,
+        // Legal
+        isLienFree: property.isLienFree || false,
+        legalNotes: property.legalNotes || '',
+        // Owner
+        ownerName: property.ownerName || '',
+        ownerPhone: property.ownerPhone || '',
+        ownerEmail: property.ownerEmail || '',
+        // Media
+        virtualTourUrl: property.virtualTourUrl || '',
+        videoUrl: property.videoUrl || '',
+        webContent: property.webContent || '',
+        amenities: property.amenities || '',
+        // Assignment
+        assignedUserId: property.assignedUserId,
       });
     } else {
       reset({
         title: '',
         description: '',
-        address: '',
+        operation: OperationType.Venta,
+        type: PropertyType.Casa,
+        status: PropertyStatus.Disponible,
+        publishStatus: PublishStatus.Borrador,
         price: 0,
-        area: 0,
-        bedrooms: 0,
-        bathrooms: 0,
-        parkingSpaces: 0,
-        propertyType: 'HOUSE',
-        listingType: 'SALE',
-        status: 'AVAILABLE',
-        images: [],
-        developmentId: null,
-        lotId: null,
-        features: [],
+        currency: 'MXN',
+        isLienFree: false,
       });
     }
   }, [property, reset]);
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: propertyService.create,
+    mutationFn: (data: PropertyFormData) => {
+      if (!user?.organizationId) {
+        throw new Error('No organization ID found');
+      }
+      return propertyService.create({
+        organizationId: user.organizationId,
+        ...data,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       onClose();
@@ -93,7 +136,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
     },
   });
 
-  const onSubmit = (data: PropertyFormData) => {
+  const onSubmit: SubmitHandler<PropertyFormData> = (data) => {
     if (isEditing) {
       updateMutation.mutate(data);
     } else {
@@ -115,7 +158,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
         />
 
         {/* Modal panel */}
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">
@@ -131,142 +174,347 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Title */}
-              <Input
-                label="Título"
-                {...register('title')}
-                error={errors.title?.message}
-                required
-              />
+            <div className="px-6 py-4 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900">Información Básica</h4>
 
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descripción
-                </label>
-                <textarea
-                  {...register('description')}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Descripción detallada de la propiedad..."
+                <Input
+                  label="Título"
+                  {...register('title')}
+                  error={errors.title?.message}
+                  required
                 />
-                {errors.description && (
-                  <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
-                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descripción
+                  </label>
+                  <textarea
+                    {...register('description')}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Descripción detallada de la propiedad..."
+                  />
+                  {errors.description && (
+                    <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Operación <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      {...register('operation', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      {Object.entries(OperationTypeLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    {errors.operation && (
+                      <p className="mt-1 text-sm text-red-600">{errors.operation.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo de Propiedad <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      {...register('type', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      {Object.entries(PropertyTypeLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    {errors.type && (
+                      <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Estado <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      {...register('status', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      {Object.entries(PropertyStatusLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    {errors.status && (
+                      <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Estado de Publicación <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      {...register('publishStatus', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      {Object.entries(PublishStatusLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    {errors.publishStatus && (
+                      <p className="mt-1 text-sm text-red-600">{errors.publishStatus.message}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Price and Areas */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900">Precio y Áreas</h4>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Precio"
+                    type="number"
+                    step="0.01"
+                    {...register('price', { valueAsNumber: true })}
+                    error={errors.price?.message}
+                    required
+                  />
+
+                  <Input
+                    label="Moneda"
+                    {...register('currency')}
+                    error={errors.currency?.message}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <Input
+                    label="Área de Construcción (m²)"
+                    type="number"
+                    step="0.01"
+                    {...register('constructionArea', { valueAsNumber: true })}
+                    error={errors.constructionArea?.message}
+                  />
+
+                  <Input
+                    label="Área de Terreno (m²)"
+                    type="number"
+                    step="0.01"
+                    {...register('landArea', { valueAsNumber: true })}
+                    error={errors.landArea?.message}
+                  />
+
+                  <Input
+                    label="Área Total (m²)"
+                    type="number"
+                    step="0.01"
+                    {...register('totalArea', { valueAsNumber: true })}
+                    error={errors.totalArea?.message}
+                  />
+                </div>
+              </div>
+
+              {/* Property Details */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900">Detalles de la Propiedad</h4>
+
+                <div className="grid grid-cols-4 gap-4">
+                  <Input
+                    label="Recámaras"
+                    type="number"
+                    {...register('bedrooms', { valueAsNumber: true })}
+                    error={errors.bedrooms?.message}
+                  />
+
+                  <Input
+                    label="Baños Completos"
+                    type="number"
+                    step="0.5"
+                    {...register('bathrooms', { valueAsNumber: true })}
+                    error={errors.bathrooms?.message}
+                  />
+
+                  <Input
+                    label="Medios Baños"
+                    type="number"
+                    step="0.5"
+                    {...register('halfBathrooms', { valueAsNumber: true })}
+                    error={errors.halfBathrooms?.message}
+                  />
+
+                  <Input
+                    label="Estacionamientos"
+                    type="number"
+                    {...register('parkingSpaces', { valueAsNumber: true })}
+                    error={errors.parkingSpaces?.message}
+                  />
+                </div>
+
+                <Input
+                  label="Año de Construcción"
+                  type="number"
+                  {...register('yearBuilt', { valueAsNumber: true })}
+                  error={errors.yearBuilt?.message}
+                />
               </div>
 
               {/* Address */}
-              <Input
-                label="Dirección"
-                {...register('address')}
-                error={errors.address?.message}
-                required
-              />
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900">Dirección</h4>
 
-              {/* Property Type and Listing Type */}
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Calle"
+                    {...register('addressStreet')}
+                    error={errors.addressStreet?.message}
+                  />
+
+                  <Input
+                    label="Número"
+                    {...register('addressNumber')}
+                    error={errors.addressNumber?.message}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <Input
+                    label="Interior"
+                    {...register('addressInterior')}
+                    error={errors.addressInterior?.message}
+                  />
+
+                  <Input
+                    label="Colonia"
+                    {...register('addressColony')}
+                    error={errors.addressColony?.message}
+                  />
+
+                  <Input
+                    label="Código Postal"
+                    {...register('addressZipCode')}
+                    error={errors.addressZipCode?.message}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Ciudad"
+                    {...register('addressCity')}
+                    error={errors.addressCity?.message}
+                  />
+
+                  <Input
+                    label="Estado"
+                    {...register('addressState')}
+                    error={errors.addressState?.message}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Latitud"
+                    type="number"
+                    step="0.000001"
+                    {...register('latitude', { valueAsNumber: true })}
+                    error={errors.latitude?.message}
+                  />
+
+                  <Input
+                    label="Longitud"
+                    type="number"
+                    step="0.000001"
+                    {...register('longitude', { valueAsNumber: true })}
+                    error={errors.longitude?.message}
+                  />
+                </div>
+              </div>
+
+              {/* Owner Information */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900">Información del Propietario</h4>
+
+                <Input
+                  label="Nombre del Propietario"
+                  {...register('ownerName')}
+                  error={errors.ownerName?.message}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Teléfono del Propietario"
+                    {...register('ownerPhone')}
+                    error={errors.ownerPhone?.message}
+                  />
+
+                  <Input
+                    label="Email del Propietario"
+                    type="email"
+                    {...register('ownerEmail')}
+                    error={errors.ownerEmail?.message}
+                  />
+                </div>
+              </div>
+
+              {/* Additional Info */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900">Información Adicional</h4>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tipo de Propiedad <span className="text-red-500">*</span>
+                    Amenidades
                   </label>
-                  <select
-                    {...register('propertyType')}
+                  <textarea
+                    {...register('amenities')}
+                    rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <option value="HOUSE">Casa</option>
-                    <option value="APARTMENT">Departamento</option>
-                    <option value="LAND">Terreno</option>
-                    <option value="COMMERCIAL">Comercial</option>
-                    <option value="OFFICE">Oficina</option>
-                    <option value="WAREHOUSE">Bodega</option>
-                    <option value="OTHER">Otro</option>
-                  </select>
-                  {errors.propertyType && (
-                    <p className="mt-1 text-sm text-red-600">{errors.propertyType.message}</p>
-                  )}
+                    placeholder="Lista de amenidades..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="URL Tour Virtual"
+                    {...register('virtualTourUrl')}
+                    error={errors.virtualTourUrl?.message}
+                  />
+
+                  <Input
+                    label="URL Video"
+                    {...register('videoUrl')}
+                    error={errors.videoUrl?.message}
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      {...register('isLienFree')}
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Libre de Gravamen</span>
+                  </label>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tipo de Listado <span className="text-red-500">*</span>
+                    Notas Legales
                   </label>
-                  <select
-                    {...register('listingType')}
+                  <textarea
+                    {...register('legalNotes')}
+                    rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <option value="SALE">Venta</option>
-                    <option value="RENT">Renta</option>
-                  </select>
-                  {errors.listingType && (
-                    <p className="mt-1 text-sm text-red-600">{errors.listingType.message}</p>
-                  )}
+                    placeholder="Notas legales adicionales..."
+                  />
                 </div>
-              </div>
-
-              {/* Price and Area */}
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Precio"
-                  type="number"
-                  step="0.01"
-                  {...register('price', { valueAsNumber: true })}
-                  error={errors.price?.message}
-                  required
-                />
-
-                <Input
-                  label="Área (m²)"
-                  type="number"
-                  step="0.01"
-                  {...register('area', { valueAsNumber: true })}
-                  error={errors.area?.message}
-                  required
-                />
-              </div>
-
-              {/* Bedrooms, Bathrooms, Parking */}
-              <div className="grid grid-cols-3 gap-4">
-                <Input
-                  label="Recámaras"
-                  type="number"
-                  {...register('bedrooms', { valueAsNumber: true })}
-                  error={errors.bedrooms?.message}
-                />
-
-                <Input
-                  label="Baños"
-                  type="number"
-                  step="0.5"
-                  {...register('bathrooms', { valueAsNumber: true })}
-                  error={errors.bathrooms?.message}
-                />
-
-                <Input
-                  label="Estacionamientos"
-                  type="number"
-                  {...register('parkingSpaces', { valueAsNumber: true })}
-                  error={errors.parkingSpaces?.message}
-                />
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...register('status')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="AVAILABLE">Disponible</option>
-                  <option value="RESERVED">Reservada</option>
-                  <option value="SOLD">Vendida</option>
-                  <option value="RENTED">Rentada</option>
-                </select>
-                {errors.status && (
-                  <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
-                )}
               </div>
             </div>
 

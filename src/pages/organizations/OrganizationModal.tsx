@@ -7,6 +7,7 @@ import { Button, Input } from '../../components/ui';
 import { organizationSchema, type OrganizationFormData } from '../../schemas/organization.schema';
 import { organizationService } from '../../services/organization.service';
 import type { Organization } from '../../types/organization.types';
+import { OrganizationType, OrganizationTier, OrganizationTypeLabels, OrganizationTierLabels } from '../../types/organization.types';
 
 interface OrganizationModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export const OrganizationModal: React.FC<OrganizationModalProps> = ({ isOpen, on
       reset({
         name: organization.name,
         type: organization.type,
+        tier: organization.tier,
         taxId: organization.taxId || '',
         email: organization.email || '',
         phone: organization.phone || '',
@@ -42,7 +44,8 @@ export const OrganizationModal: React.FC<OrganizationModalProps> = ({ isOpen, on
     } else {
       reset({
         name: '',
-        type: '',
+        type: OrganizationType.Inmobiliaria,
+        tier: OrganizationTier.Free,
         taxId: '',
         email: '',
         phone: '',
@@ -99,9 +102,38 @@ export const OrganizationModal: React.FC<OrganizationModalProps> = ({ isOpen, on
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="px-6 py-4 space-y-4">
+              <Input label="Nombre" {...register('name')} error={errors.name?.message} required />
+
               <div className="grid grid-cols-2 gap-4">
-                <Input label="Nombre" {...register('name')} error={errors.name?.message} required />
-                <Input label="Tipo (ej: Cliente, Proveedor)" {...register('type')} error={errors.type?.message} required />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    {...register('type', { valueAsNumber: true })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    {Object.entries(OrganizationType).filter(([k]) => isNaN(Number(k))).map(([_k, v]) => (
+                      <option key={v} value={v}>{OrganizationTypeLabels[v as OrganizationType]}</option>
+                    ))}
+                  </select>
+                  {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Plan <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    {...register('tier', { valueAsNumber: true })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    {Object.entries(OrganizationTier).filter(([k]) => isNaN(Number(k))).map(([_k, v]) => (
+                      <option key={v} value={v}>{OrganizationTierLabels[v as OrganizationTier]}</option>
+                    ))}
+                  </select>
+                  {errors.tier && <p className="mt-1 text-sm text-red-600">{errors.tier.message}</p>}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

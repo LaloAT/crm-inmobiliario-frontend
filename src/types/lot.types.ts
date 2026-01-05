@@ -2,7 +2,7 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum LotStatus {
+export enum LotStatus {
   Disponible = 1,
   Apartado = 2,
   Vendido = 3,

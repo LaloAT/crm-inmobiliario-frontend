@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Loader2, FileText, Download } from 'lucide-react'
 import { contractService } from '../../services/contract.service';
 import { ContractModal } from './ContractModal';
 import type { Contract } from '../../types/contract.types';
+import { ContractStatus, ContractStatusLabels, ContractStatusColors } from '../../types/contract.types';
 
 export const ContractsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -12,7 +13,7 @@ export const ContractsPage: React.FC = () => {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ContractStatus | undefined>(undefined);
 
   // Fetch contracts
   const { data: contractsData, isLoading } = useQuery({
@@ -21,7 +22,7 @@ export const ContractsPage: React.FC = () => {
       contractService.getAll({
         pageNumber: currentPage,
         pageSize: 10,
-        status: statusFilter || undefined,
+        status: statusFilter,
       }),
   });
 
@@ -60,24 +61,12 @@ export const ContractsPage: React.FC = () => {
   };
 
   // Helper functions
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      DRAFT: 'Borrador',
-      ACTIVE: 'Activo',
-      COMPLETED: 'Completado',
-      CANCELLED: 'Cancelado',
-    };
-    return labels[status] || status;
+  const getStatusLabel = (status: ContractStatus) => {
+    return ContractStatusLabels[status] || status.toString();
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      DRAFT: 'bg-gray-100 text-gray-800',
-      ACTIVE: 'bg-green-100 text-green-800',
-      COMPLETED: 'bg-blue-100 text-blue-800',
-      CANCELLED: 'bg-red-100 text-red-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+  const getStatusColor = (status: ContractStatus) => {
+    return ContractStatusColors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const formatCurrency = (value: number) => {
@@ -121,17 +110,20 @@ export const ContractsPage: React.FC = () => {
           <div className="flex gap-4">
             <select
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              value={statusFilter}
+              value={statusFilter || ''}
               onChange={(e) => {
-                setStatusFilter(e.target.value);
+                setStatusFilter(e.target.value ? Number(e.target.value) as ContractStatus : undefined);
                 setCurrentPage(1);
               }}
             >
               <option value="">Todos los estados</option>
-              <option value="DRAFT">Borrador</option>
-              <option value="ACTIVE">Activo</option>
-              <option value="COMPLETED">Completado</option>
-              <option value="CANCELLED">Cancelado</option>
+              {Object.entries(ContractStatus)
+                .filter(([k]) => isNaN(Number(k)))
+                .map(([_key, value]) => (
+                  <option key={value} value={value}>
+                    {ContractStatusLabels[value as ContractStatus]}
+                  </option>
+                ))}
             </select>
           </div>
         </CardBody>

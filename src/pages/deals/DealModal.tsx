@@ -9,6 +9,8 @@ import { dealService } from '../../services/deal.service';
 import { leadService } from '../../services/lead.service';
 import { propertyService } from '../../services/property.service';
 import type { Deal } from '../../types/deal.types';
+import { DealOperation } from '../../types/deal.types';
+import { useAuth } from '../../context/AuthContext';
 
 interface DealModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ interface DealModalProps {
 
 export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isEditing = !!deal;
 
   const {
@@ -62,7 +65,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
           : '',
         leadId: deal.leadId,
         propertyId: deal.propertyId || null,
-        assignedToId: deal.assignedToId || null,
+        assignedToId: deal.ownerId || null,
       });
     } else {
       reset({
@@ -91,7 +94,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: DealFormData) => dealService.update(deal!.id, data),
+    mutationFn: (data: DealFormData) => dealService.update(deal!.id, { ...data, propertyId: data.propertyId || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       onClose();
@@ -103,7 +106,15 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
     if (isEditing) {
       updateMutation.mutate(data);
     } else {
-      createMutation.mutate(data);
+      const createData = {
+        ...data,
+        propertyId: data.propertyId || undefined,
+        organizationId: user?.organizationId || '',
+        ownerId: user?.id || '',
+        operation: DealOperation.Venta,
+        expectedAmount: data.value || 0,
+      };
+      createMutation.mutate(createData);
     }
   };
 
@@ -246,7 +257,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
                   <option value="">Sin propiedad asignada</option>
                   {properties.map((property) => (
                     <option key={property.id} value={property.id}>
-                      {property.title} - {property.address}
+                      {property.title} - {property.addressCity || 'Sin dirección'}
                     </option>
                   ))}
                 </select>

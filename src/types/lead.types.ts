@@ -2,7 +2,7 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum LeadSource {
+export enum LeadSource {
   SitioWeb = 1,
   Referido = 2,
   RedesSociales = 3,
@@ -12,7 +12,7 @@ export const enum LeadSource {
   Email = 7,
 }
 
-export const enum LeadStatus {
+export enum LeadStatus {
   Nuevo = 1,
   Contactado = 2,
   Calificado = 3,
@@ -21,7 +21,7 @@ export const enum LeadStatus {
   Perdido = 6,
 }
 
-export const enum InterestedInType {
+export enum InterestedInType {
   Comprar = 1,
   Rentar = 2,
   Ambos = 3,

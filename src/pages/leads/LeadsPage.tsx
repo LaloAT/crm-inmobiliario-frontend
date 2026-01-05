@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardHeader, CardBody, Button } from '../../components/ui';
+import { Card, CardBody, Button } from '../../components/ui';
 import { Plus, Pencil, Trash2, Loader2, Search } from 'lucide-react';
 import { leadService } from '../../services/lead.service';
 import { LeadModal } from './LeadModal';
@@ -19,8 +19,8 @@ export const LeadsPage: React.FC = () => {
     queryKey: ['leads', currentPage, searchTerm],
     queryFn: () =>
       leadService.getAll({
-        page: currentPage,
-        limit: 10,
+        pageNumber: currentPage,
+        pageSize: 10,
         search: searchTerm || undefined,
       }),
   });
@@ -60,16 +60,17 @@ export const LeadsPage: React.FC = () => {
   };
 
   // Helper functions
-  const getSourceLabel = (source: string) => {
-    const labels: Record<string, string> = {
-      WEBSITE: 'Sitio Web',
-      REFERRAL: 'Referido',
-      SOCIAL_MEDIA: 'Redes Sociales',
-      PHONE_CALL: 'Llamada',
-      EMAIL: 'Email',
-      OTHER: 'Otro',
+  const getSourceLabel = (source: number) => {
+    const labels: Record<number, string> = {
+      1: 'Sitio Web',
+      2: 'Referido',
+      3: 'Redes Sociales',
+      4: 'Publicidad',
+      5: 'Walk-In',
+      6: 'Llamada Telefónica',
+      7: 'Email',
     };
-    return labels[source] || source;
+    return labels[source] || 'Desconocido';
   };
 
   const getStatusLabel = (status: number) => {
@@ -77,8 +78,9 @@ export const LeadsPage: React.FC = () => {
       1: 'Nuevo',
       2: 'Contactado',
       3: 'Calificado',
-      4: 'Propuesta',
-      5: 'Negociación',
+      4: 'No Calificado',
+      5: 'Convertido',
+      6: 'Perdido',
     };
     return labels[status] || 'Desconocido';
   };
@@ -88,14 +90,15 @@ export const LeadsPage: React.FC = () => {
       1: 'bg-blue-100 text-blue-800',
       2: 'bg-yellow-100 text-yellow-800',
       3: 'bg-green-100 text-green-800',
-      4: 'bg-purple-100 text-purple-800',
-      5: 'bg-orange-100 text-orange-800',
+      4: 'bg-red-100 text-red-800',
+      5: 'bg-purple-100 text-purple-800',
+      6: 'bg-gray-100 text-gray-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const leads = leadsData?.data || [];
-  const totalPages = Math.ceil((leadsData?.total || 0) / (leadsData?.limit || 10));
+  const leads = leadsData?.items || [];
+  const totalPages = leadsData?.totalPages || 0;
 
   return (
     <div className="space-y-6">

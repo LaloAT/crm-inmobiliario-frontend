@@ -5,6 +5,14 @@ import { Plus, Pencil, Trash2, Loader2, Search, Grid, List, Home, Bed, Bath, Car
 import { propertyService } from '../../services/property.service';
 import { PropertyModal } from './PropertyModal';
 import type { Property } from '../../types/property.types';
+import {
+  PropertyType,
+  PropertyStatus,
+  PropertyTypeLabels,
+  PropertyStatusLabels,
+  OperationType,
+  OperationTypeLabels
+} from '../../types/property.types';
 
 export const PropertiesPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -14,23 +22,23 @@ export const PropertiesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [filters, setFilters] = useState({
-    propertyType: '',
-    listingType: '',
-    status: '',
-  });
+  const [filters, setFilters] = useState<{
+    type?: PropertyType;
+    operation?: OperationType;
+    status?: PropertyStatus;
+  }>({});
 
   // Fetch properties
   const { data: propertiesData, isLoading } = useQuery({
     queryKey: ['properties', currentPage, searchTerm, filters],
     queryFn: () =>
       propertyService.getAll({
-        page: currentPage,
-        limit: 12,
+        pageNumber: currentPage,
+        pageSize: 12,
         search: searchTerm || undefined,
-        propertyType: filters.propertyType || undefined,
-        listingType: filters.listingType || undefined,
-        status: filters.status || undefined,
+        type: filters.type,
+        operation: filters.operation,
+        status: filters.status,
       }),
   });
 
@@ -69,39 +77,13 @@ export const PropertiesPage: React.FC = () => {
   };
 
   // Helper functions
-  const getPropertyTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      HOUSE: 'Casa',
-      APARTMENT: 'Departamento',
-      LAND: 'Terreno',
-      COMMERCIAL: 'Comercial',
-      OFFICE: 'Oficina',
-      WAREHOUSE: 'Bodega',
-      OTHER: 'Otro',
-    };
-    return labels[type] || type;
-  };
-
-  const getListingTypeLabel = (type: string) => {
-    return type === 'SALE' ? 'Venta' : 'Renta';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      AVAILABLE: 'Disponible',
-      RESERVED: 'Reservada',
-      SOLD: 'Vendida',
-      RENTED: 'Rentada',
-    };
-    return labels[status] || status;
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      AVAILABLE: 'bg-green-100 text-green-800',
-      RESERVED: 'bg-yellow-100 text-yellow-800',
-      SOLD: 'bg-red-100 text-red-800',
-      RENTED: 'bg-blue-100 text-blue-800',
+  const getStatusColor = (status: PropertyStatus) => {
+    const colors: Record<PropertyStatus, string> = {
+      [PropertyStatus.Disponible]: 'bg-green-100 text-green-800',
+      [PropertyStatus.Apartado]: 'bg-yellow-100 text-yellow-800',
+      [PropertyStatus.Vendido]: 'bg-red-100 text-red-800',
+      [PropertyStatus.Rentado]: 'bg-blue-100 text-blue-800',
+      [PropertyStatus.NoDisponible]: 'bg-gray-100 text-gray-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -114,8 +96,18 @@ export const PropertiesPage: React.FC = () => {
     }).format(price);
   };
 
-  const properties = propertiesData?.data || [];
-  const totalPages = Math.ceil((propertiesData?.total || 0) / (propertiesData?.limit || 12));
+  const getAddressDisplay = (property: Property) => {
+    const parts = [
+      property.addressStreet,
+      property.addressNumber,
+      property.addressColony,
+      property.addressCity
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'Sin dirección';
+  };
+
+  const properties = propertiesData?.items || [];
+  const totalPages = propertiesData?.totalPages || 1;
 
   return (
     <div className="space-y-6">
@@ -163,49 +155,46 @@ export const PropertiesPage: React.FC = () => {
             {/* Property Type */}
             <select
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              value={filters.propertyType}
+              value={filters.type || ''}
               onChange={(e) => {
-                setFilters({ ...filters, propertyType: e.target.value });
+                setFilters({ ...filters, type: e.target.value ? Number(e.target.value) as PropertyType : undefined });
                 setCurrentPage(1);
               }}
             >
               <option value="">Todos los tipos</option>
-              <option value="HOUSE">Casa</option>
-              <option value="APARTMENT">Departamento</option>
-              <option value="LAND">Terreno</option>
-              <option value="COMMERCIAL">Comercial</option>
-              <option value="OFFICE">Oficina</option>
-              <option value="WAREHOUSE">Bodega</option>
+              {Object.entries(PropertyTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
 
-            {/* Listing Type */}
+            {/* Operation Type */}
             <select
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              value={filters.listingType}
+              value={filters.operation || ''}
               onChange={(e) => {
-                setFilters({ ...filters, listingType: e.target.value });
+                setFilters({ ...filters, operation: e.target.value ? Number(e.target.value) as OperationType : undefined });
                 setCurrentPage(1);
               }}
             >
-              <option value="">Venta y Renta</option>
-              <option value="SALE">Venta</option>
-              <option value="RENT">Renta</option>
+              <option value="">Todas las operaciones</option>
+              {Object.entries(OperationTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
 
             {/* Status */}
             <select
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              value={filters.status}
+              value={filters.status || ''}
               onChange={(e) => {
-                setFilters({ ...filters, status: e.target.value });
+                setFilters({ ...filters, status: e.target.value ? Number(e.target.value) as PropertyStatus : undefined });
                 setCurrentPage(1);
               }}
             >
               <option value="">Todos los estados</option>
-              <option value="AVAILABLE">Disponible</option>
-              <option value="RESERVED">Reservada</option>
-              <option value="SOLD">Vendida</option>
-              <option value="RENTED">Rentada</option>
+              {Object.entries(PropertyStatusLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           </div>
         </CardBody>
@@ -233,7 +222,7 @@ export const PropertiesPage: React.FC = () => {
         <>
           {/* Grid View */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
+            {properties.map((property: Property) => (
               <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Image */}
                 <div className="relative h-48 bg-gray-200">
@@ -254,7 +243,7 @@ export const PropertiesPage: React.FC = () => {
                         property.status
                       )}`}
                     >
-                      {getStatusLabel(property.status)}
+                      {PropertyStatusLabels[property.status]}
                     </span>
                   </div>
                 </div>
@@ -268,16 +257,16 @@ export const PropertiesPage: React.FC = () => {
                       </h3>
                       <p className="text-sm text-gray-500 flex items-center mt-1">
                         <MapPin className="w-4 h-4 mr-1" />
-                        {property.address}
+                        {getAddressDisplay(property)}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <span className="text-xs bg-primary-100 text-primary-800 px-2 py-1 rounded">
-                        {getPropertyTypeLabel(property.propertyType)}
+                        {PropertyTypeLabels[property.type]}
                       </span>
                       <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                        {getListingTypeLabel(property.listingType)}
+                        {OperationTypeLabels[property.operation]}
                       </span>
                     </div>
 
@@ -306,9 +295,9 @@ export const PropertiesPage: React.FC = () => {
                       <p className="text-2xl font-bold text-primary-600">
                         {formatPrice(property.price)}
                       </p>
-                      {property.area && (
+                      {property.totalArea && (
                         <p className="text-sm text-gray-500">
-                          {property.area} m² • {formatPrice(property.price / property.area)}/m²
+                          {property.totalArea} m² • {formatPrice(property.price / property.totalArea)}/m²
                         </p>
                       )}
                     </div>
@@ -365,7 +354,7 @@ export const PropertiesPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {properties.map((property) => (
+                    {properties.map((property: Property) => (
                       <tr key={property.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
@@ -386,16 +375,16 @@ export const PropertiesPage: React.FC = () => {
                               <div className="text-sm font-medium text-gray-900">
                                 {property.title}
                               </div>
-                              <div className="text-sm text-gray-500">{property.address}</div>
+                              <div className="text-sm text-gray-500">{getAddressDisplay(property)}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {getPropertyTypeLabel(property.propertyType)}
+                            {PropertyTypeLabels[property.type]}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {getListingTypeLabel(property.listingType)}
+                            {OperationTypeLabels[property.operation]}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -404,7 +393,7 @@ export const PropertiesPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{property.area} m²</div>
+                          <div className="text-sm text-gray-900">{property.totalArea || '-'} m²</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -412,7 +401,7 @@ export const PropertiesPage: React.FC = () => {
                               property.status
                             )}`}
                           >
-                            {getStatusLabel(property.status)}
+                            {PropertyStatusLabels[property.status]}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

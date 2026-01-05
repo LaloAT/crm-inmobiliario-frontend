@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Loader2, Users as UsersIcon, Mail, Phone } from '
 import { userService } from '../../services/user.service';
 import { UserModal } from './UserModal';
 import type { User } from '../../types/user.types';
+import { UserRole, UserRoleLabels, UserRoleShortLabels } from '../../types/user.types';
 
 export const UsersPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -12,15 +13,15 @@ export const UsersPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [roleFilter, setRoleFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState<UserRole | undefined>(undefined);
 
   const { data: usersData, isLoading } = useQuery({
     queryKey: ['users', currentPage, roleFilter],
     queryFn: () =>
       userService.getAll({
-        page: currentPage,
-        limit: 15,
-        role: roleFilter || undefined,
+        pageNumber: currentPage,
+        pageSize: 15,
+        role: roleFilter,
       }),
   });
 
@@ -51,18 +52,21 @@ export const UsersPage: React.FC = () => {
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    const roleColors: Record<string, string> = {
-      ADMIN: 'bg-red-100 text-red-800',
-      MANAGER: 'bg-purple-100 text-purple-800',
-      AGENT: 'bg-blue-100 text-blue-800',
-      USER: 'bg-gray-100 text-gray-800',
+  const getRoleBadge = (role: UserRole) => {
+    const roleColors: Record<UserRole, string> = {
+      [UserRole.SystemAdmin]: 'bg-red-100 text-red-800',
+      [UserRole.OrganizationAdmin]: 'bg-red-100 text-red-800',
+      [UserRole.Director]: 'bg-purple-100 text-purple-800',
+      [UserRole.Manager]: 'bg-purple-100 text-purple-800',
+      [UserRole.Supervisor]: 'bg-blue-100 text-blue-800',
+      [UserRole.Agent]: 'bg-blue-100 text-blue-800',
+      [UserRole.Assistant]: 'bg-gray-100 text-gray-800',
     };
     return roleColors[role] || 'bg-gray-100 text-gray-800';
   };
 
-  const users = usersData?.data || [];
-  const totalPages = Math.ceil((usersData?.total || 0) / (usersData?.limit || 15));
+  const users = usersData?.items || [];
+  const totalPages = usersData?.totalPages || 1;
 
   return (
     <div className="space-y-6">
@@ -82,17 +86,20 @@ export const UsersPage: React.FC = () => {
         <CardBody>
           <select
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            value={roleFilter}
+            value={roleFilter || ''}
             onChange={(e) => {
-              setRoleFilter(e.target.value);
+              setRoleFilter(e.target.value ? Number(e.target.value) as UserRole : undefined);
               setCurrentPage(1);
             }}
           >
             <option value="">Todos los roles</option>
-            <option value="ADMIN">Administrador</option>
-            <option value="MANAGER">Gerente</option>
-            <option value="AGENT">Agente</option>
-            <option value="USER">Usuario</option>
+            {Object.entries(UserRole)
+              .filter(([key]) => isNaN(Number(key)))
+              .map(([_key, value]) => (
+                <option key={value} value={value}>
+                  {UserRoleLabels[value as UserRole]}
+                </option>
+              ))}
           </select>
         </CardBody>
       </Card>
@@ -154,7 +161,7 @@ export const UsersPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadge(user.role)}`}>
-                          {user.role}
+                          {UserRoleShortLabels[user.role]}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">

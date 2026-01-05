@@ -2,7 +2,7 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum UserRole {
+export enum UserRole {
   SystemAdmin = 1,
   OrganizationAdmin = 2,
   Director = 3,
@@ -12,7 +12,7 @@ export const enum UserRole {
   Assistant = 7,
 }
 
-export const enum UserStatus {
+export enum UserStatus {
   Active = 1,
   Inactive = 2,
   Suspended = 3,

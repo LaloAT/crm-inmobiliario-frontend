@@ -1,8 +1,10 @@
 import { z } from 'zod';
+import { OrganizationType, OrganizationTier } from '../types/organization.types';
 
 export const organizationSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
-  type: z.string().min(1, 'El tipo es requerido'),
+  type: z.nativeEnum(OrganizationType),
+  tier: z.nativeEnum(OrganizationTier),
   taxId: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   phone: z.string().optional(),

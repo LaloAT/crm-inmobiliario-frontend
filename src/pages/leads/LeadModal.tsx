@@ -6,6 +6,7 @@ import { X, Loader2 } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { leadSchema, type LeadFormData } from '../../schemas/lead.schema';
 import { leadService } from '../../services/lead.service';
+import { useAuth } from '../../context/AuthContext';
 import type { Lead } from '../../types/lead.types';
 
 interface LeadModalProps {
@@ -16,6 +17,7 @@ interface LeadModalProps {
 
 export const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, lead }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isEditing = !!lead;
 
   const {
@@ -25,9 +27,6 @@ export const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, lead }) =
     formState: { errors },
   } = useForm<LeadFormData>({
     resolver: zodResolver(leadSchema),
-    defaultValues: {
-      status: 1,
-    },
   });
 
   // Reset form when lead changes
@@ -41,7 +40,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, lead }) =
         source: lead.source,
         status: lead.status,
         notes: lead.notes || '',
-        assignedToId: lead.assignedToId || null,
+        ownerId: lead.ownerId || undefined,
       });
     } else {
       reset({
@@ -49,10 +48,10 @@ export const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, lead }) =
         lastName: '',
         email: '',
         phone: '',
-        source: 'WEBSITE',
+        source: 1,
         status: 1,
         notes: '',
-        assignedToId: null,
+        ownerId: undefined,
       });
     }
   }, [lead, reset]);
@@ -78,10 +77,22 @@ export const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, lead }) =
   });
 
   const onSubmit = (data: LeadFormData) => {
+    const sanitizedData = {
+      ...data,
+      ownerId: data.ownerId || undefined,
+    };
+
     if (isEditing) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(sanitizedData);
     } else {
-      createMutation.mutate(data);
+      if (!user?.organizationId) {
+        console.error('No organization ID available');
+        return;
+      }
+      createMutation.mutate({
+        ...sanitizedData,
+        organizationId: user.organizationId,
+      });
     }
   };
 
@@ -155,15 +166,16 @@ export const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, lead }) =
                   Fuente <span className="text-red-500">*</span>
                 </label>
                 <select
-                  {...register('source')}
+                  {...register('source', { valueAsNumber: true })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="WEBSITE">Sitio Web</option>
-                  <option value="REFERRAL">Referido</option>
-                  <option value="SOCIAL_MEDIA">Redes Sociales</option>
-                  <option value="PHONE_CALL">Llamada</option>
-                  <option value="EMAIL">Email</option>
-                  <option value="OTHER">Otro</option>
+                  <option value={1}>Sitio Web</option>
+                  <option value={2}>Referido</option>
+                  <option value={3}>Redes Sociales</option>
+                  <option value={4}>Publicidad</option>
+                  <option value={5}>Walk-In</option>
+                  <option value={6}>Llamada Telefónica</option>
+                  <option value={7}>Email</option>
                 </select>
                 {errors.source && (
                   <p className="mt-1 text-sm text-red-600">{errors.source.message}</p>
@@ -182,8 +194,9 @@ export const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, lead }) =
                   <option value={1}>Nuevo</option>
                   <option value={2}>Contactado</option>
                   <option value={3}>Calificado</option>
-                  <option value={4}>Propuesta</option>
-                  <option value={5}>Negociación</option>
+                  <option value={4}>No Calificado</option>
+                  <option value={5}>Convertido</option>
+                  <option value={6}>Perdido</option>
                 </select>
                 {errors.status && (
                   <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>

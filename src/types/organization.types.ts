@@ -2,7 +2,7 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum OrganizationType {
+export enum OrganizationType {
   Constructora = 1,
   Inmobiliaria = 2,
   Franquicia = 3,
@@ -10,14 +10,14 @@ export const enum OrganizationType {
   Asesor = 5,
 }
 
-export const enum OrganizationTier {
+export enum OrganizationTier {
   Free = 1,
   Basic = 2,
   Professional = 3,
   Enterprise = 4,
 }
 
-export const enum OrganizationStatus {
+export enum OrganizationStatus {
   Active = 1,
   Inactive = 2,
   Suspended = 3,

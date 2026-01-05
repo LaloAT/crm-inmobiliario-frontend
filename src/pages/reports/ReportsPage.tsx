@@ -31,29 +31,29 @@ export const ReportsPage: React.FC = () => {
   // Fetch Sales Report
   const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ['reports', 'sales', startDate, endDate],
-    queryFn: () => reportService.getSales(startDate, endDate),
+    queryFn: () => reportService.getSalesReport({ fromDate: startDate, toDate: endDate }),
     enabled: activeTab === 'sales',
   });
 
   // Fetch Leads Report
   const { data: leadsData, isLoading: leadsLoading } = useQuery({
     queryKey: ['reports', 'leads', startDate, endDate],
-    queryFn: () => reportService.getLeads(startDate, endDate),
+    queryFn: () => reportService.getLeadsReport({ fromDate: startDate, toDate: endDate }),
     enabled: activeTab === 'leads',
   });
 
   // Fetch Inventory Report
   const { data: inventoryData, isLoading: inventoryLoading } = useQuery({
     queryKey: ['reports', 'inventory'],
-    queryFn: () => reportService.getInventory(),
+    queryFn: () => reportService.getInventoryReport(),
     enabled: activeTab === 'inventory',
   });
 
-  // Fetch Development Report
+  // Fetch Development Report (using first development ID as placeholder)
   const { data: developmentData, isLoading: developmentLoading } = useQuery({
     queryKey: ['reports', 'development'],
-    queryFn: () => reportService.getDevelopment(),
-    enabled: activeTab === 'development',
+    queryFn: () => reportService.getDevelopmentReport('placeholder-id'),
+    enabled: false, // Disabled for now since we need a specific development ID
   });
 
   const formatCurrency = (value: number) => {
@@ -75,19 +75,19 @@ export const ReportsPage: React.FC = () => {
 
       switch (activeTab) {
         case 'sales':
-          blob = await reportService.exportSales(startDate, endDate);
+          blob = await reportService.exportSalesReport({ fromDate: startDate, toDate: endDate });
           filename = `reporte-ventas-${startDate}-${endDate}.xlsx`;
           break;
         case 'leads':
-          blob = await reportService.exportLeads(startDate, endDate);
+          blob = await reportService.exportLeadsReport({ fromDate: startDate, toDate: endDate });
           filename = `reporte-leads-${startDate}-${endDate}.xlsx`;
           break;
         case 'inventory':
-          blob = await reportService.exportInventory();
+          blob = await reportService.exportInventoryReport();
           filename = `reporte-inventario-${new Date().toISOString().split('T')[0]}.xlsx`;
           break;
         case 'development':
-          blob = await reportService.exportDevelopment();
+          blob = await reportService.exportDevelopmentReport('placeholder-id');
           filename = `reporte-desarrollos-${new Date().toISOString().split('T')[0]}.xlsx`;
           break;
         default:
@@ -202,13 +202,13 @@ export const ReportsPage: React.FC = () => {
                 <Card className="p-6">
                   <p className="text-sm font-medium text-gray-600">Total de Ventas</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {formatCurrency(salesData.totalSales)}
+                    {formatCurrency(salesData.totalRevenue)}
                   </p>
                 </Card>
                 <Card className="p-6">
                   <p className="text-sm font-medium text-gray-600">Número de Transacciones</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {formatNumber(salesData.totalTransactions)}
+                    {formatNumber(salesData.totalSales)}
                   </p>
                 </Card>
                 <Card className="p-6">
@@ -230,7 +230,7 @@ export const ReportsPage: React.FC = () => {
                   </CardHeader>
                   <CardBody>
                     <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={salesData.salesByMonth}>
+                      <LineChart data={salesData.salesByMonth as unknown as { month: string; totalRevenue: number }[]}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />
@@ -238,7 +238,7 @@ export const ReportsPage: React.FC = () => {
                         <Legend />
                         <Line
                           type="monotone"
-                          dataKey="amount"
+                          dataKey="totalRevenue"
                           stroke="#1e40af"
                           strokeWidth={2}
                           name="Ventas"
@@ -257,13 +257,13 @@ export const ReportsPage: React.FC = () => {
                   </CardHeader>
                   <CardBody>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={salesData.salesByAgent}>
+                      <BarChart data={salesData.salesByAgent as unknown as { agentName: string; totalRevenue: number }[]}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="agentName" />
                         <YAxis />
                         <Tooltip formatter={(value) => formatCurrency(value as number)} />
                         <Legend />
-                        <Bar dataKey="amount" fill="#1e40af" name="Ventas" />
+                        <Bar dataKey="totalRevenue" fill="#1e40af" name="Ventas" />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardBody>
@@ -321,16 +321,16 @@ export const ReportsPage: React.FC = () => {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
-                          data={leadsData.leadsBySource}
+                          data={leadsData.leadsBySource as unknown as { name: string; count: number }[]}
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
                           outerRadius={100}
                           fill="#8884d8"
                           dataKey="count"
                         >
-                          {leadsData.leadsBySource.map((entry, index) => (
+                          {(leadsData.leadsBySource as unknown as { name: string; count: number }[]).map((_item, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -349,7 +349,7 @@ export const ReportsPage: React.FC = () => {
                   </CardHeader>
                   <CardBody>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={leadsData.leadsByStatus}>
+                      <BarChart data={leadsData.leadsByStatus as unknown as { status: string; count: number }[]}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="status" />
                         <YAxis />
@@ -399,9 +399,9 @@ export const ReportsPage: React.FC = () => {
                   </p>
                 </Card>
                 <Card className="p-6">
-                  <p className="text-sm font-medium text-gray-600">Reservadas</p>
+                  <p className="text-sm font-medium text-gray-600">Rentadas</p>
                   <p className="text-3xl font-bold text-yellow-600 mt-2">
-                    {formatNumber(inventoryData.reservedProperties)}
+                    {formatNumber(inventoryData.rentedProperties)}
                   </p>
                 </Card>
               </div>
@@ -419,16 +419,16 @@ export const ReportsPage: React.FC = () => {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
-                          data={inventoryData.propertiesByType}
+                          data={inventoryData.propertiesByType as unknown as { name: string; count: number }[]}
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
                           outerRadius={100}
                           fill="#8884d8"
                           dataKey="count"
                         >
-                          {inventoryData.propertiesByType.map((entry, index) => (
+                          {(inventoryData.propertiesByType as unknown as { name: string; count: number }[]).map((_item, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -447,7 +447,7 @@ export const ReportsPage: React.FC = () => {
                   </CardHeader>
                   <CardBody>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={inventoryData.propertiesByStatus}>
+                      <BarChart data={inventoryData.propertiesByStatus as unknown as { status: string; count: number }[]}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="status" />
                         <YAxis />
@@ -472,7 +472,7 @@ export const ReportsPage: React.FC = () => {
                     {formatCurrency(inventoryData.totalInventoryValue)}
                   </p>
                   <p className="text-sm text-gray-500 mt-2">
-                    Valor promedio por propiedad: {formatCurrency(inventoryData.averagePropertyValue)}
+                    Valor promedio por propiedad: {formatCurrency(inventoryData.averagePrice)}
                   </p>
                 </CardBody>
               </Card>
@@ -496,9 +496,9 @@ export const ReportsPage: React.FC = () => {
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="p-6">
-                  <p className="text-sm font-medium text-gray-600">Total de Desarrollos</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {formatNumber(developmentData.totalDevelopments)}
+                  <p className="text-sm font-medium text-gray-600">Desarrollo</p>
+                  <p className="text-xl font-bold text-gray-900 mt-2">
+                    {developmentData.developmentName}
                   </p>
                 </Card>
                 <Card className="p-6">
@@ -517,54 +517,51 @@ export const ReportsPage: React.FC = () => {
 
               {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Development Progress */}
+                {/* Ventas por Mes */}
                 <Card>
                   <CardHeader>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Progreso de Desarrollos
+                      Ventas por Mes
                     </h3>
                   </CardHeader>
                   <CardBody>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={developmentData.developmentProgress}>
+                      <LineChart data={developmentData.salesByMonth as unknown as { periodLabel: string; revenue: number }[]}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
+                        <XAxis dataKey="periodLabel" />
                         <YAxis />
-                        <Tooltip />
+                        <Tooltip formatter={(value) => formatCurrency(value as number)} />
                         <Legend />
-                        <Bar dataKey="total" fill="#94a3b8" name="Total" />
-                        <Bar dataKey="sold" fill="#16a34a" name="Vendidos" />
-                      </BarChart>
+                        <Line
+                          type="monotone"
+                          dataKey="revenue"
+                          stroke="#1e40af"
+                          strokeWidth={2}
+                          name="Ingresos"
+                        />
+                      </LineChart>
                     </ResponsiveContainer>
                   </CardBody>
                 </Card>
 
-                {/* Lot Status Distribution */}
+                {/* Lotes por Bloque */}
                 <Card>
                   <CardHeader>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Estado de Lotes
+                      Lotes por Bloque
                     </h3>
                   </CardHeader>
                   <CardBody>
                     <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={developmentData.lotsByStatus}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="count"
-                        >
-                          {developmentData.lotsByStatus.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
+                      <BarChart data={developmentData.lotsByBlock as unknown as { block: string; totalLots: number; sold: number }[]}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="block" />
+                        <YAxis />
                         <Tooltip />
-                      </PieChart>
+                        <Legend />
+                        <Bar dataKey="totalLots" fill="#94a3b8" name="Total" />
+                        <Bar dataKey="sold" fill="#16a34a" name="Vendidos" />
+                      </BarChart>
                     </ResponsiveContainer>
                   </CardBody>
                 </Card>

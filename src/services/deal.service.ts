@@ -8,7 +8,6 @@ import type {
   CreateDealActivityDto,
   DealFilters,
   DealPaginatedResponse,
-  DealStage,
 } from '../types/deal.types';
 
 export const dealService = {

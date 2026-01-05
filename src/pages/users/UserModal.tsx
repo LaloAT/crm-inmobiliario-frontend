@@ -7,6 +7,8 @@ import { Button, Input } from '../../components/ui';
 import { userSchema, type UserFormData } from '../../schemas/user.schema';
 import { userService } from '../../services/user.service';
 import type { User } from '../../types/user.types';
+import { UserRole, UserRoleLabels } from '../../types/user.types';
+import { useAuth } from '../../context/AuthContext';
 
 interface UserModalProps {
   isOpen: boolean;
@@ -16,6 +18,7 @@ interface UserModalProps {
 
 export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
   const isEditing = !!user;
 
   const {
@@ -41,7 +44,7 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) =
       reset({
         email: '',
         fullName: '',
-        role: 'USER',
+        role: UserRole.Agent,
         phone: '',
         password: '',
       });
@@ -77,7 +80,11 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) =
     if (isEditing) {
       updateMutation.mutate(data);
     } else {
-      createMutation.mutate(data);
+      const createData = {
+        ...data,
+        organizationId: currentUser?.organizationId || '',
+      };
+      createMutation.mutate(createData as any);
     }
   };
 
@@ -143,13 +150,16 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) =
                   Rol <span className="text-red-500">*</span>
                 </label>
                 <select
-                  {...register('role')}
+                  {...register('role', { valueAsNumber: true })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="USER">Usuario</option>
-                  <option value="AGENT">Agente</option>
-                  <option value="MANAGER">Gerente</option>
-                  <option value="ADMIN">Administrador</option>
+                  {Object.entries(UserRole)
+                    .filter(([key]) => isNaN(Number(key)))
+                    .map(([_key, value]) => (
+                      <option key={value} value={value}>
+                        {UserRoleLabels[value as UserRole]}
+                      </option>
+                    ))}
                 </select>
                 {errors.role && (
                   <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>

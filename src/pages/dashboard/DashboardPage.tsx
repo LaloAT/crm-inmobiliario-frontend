@@ -4,7 +4,7 @@ import { Card, CardHeader, CardBody } from '../../components/ui';
 import { Building2, Users, Handshake, TrendingUp, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { dashboardService } from '../../services/dashboard.service';
 import { useAuth } from '../../context/AuthContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -16,9 +16,33 @@ export const DashboardPage: React.FC = () => {
     refetchInterval: 60000, // Refrescar cada minuto
   });
 
-  // Extraer datos del dashboard
-  const stats = dashboard || {};
+  // Extraer datos del dashboard con valores por defecto
+  const stats = dashboard || {
+    totalProperties: 0,
+    totalLeads: 0,
+    totalDeals: 0,
+    totalRevenue: 0,
+    propertiesAvailable: 0,
+    propertiesSold: 0,
+    propertiesRented: 0,
+    newLeadsThisMonth: 0,
+    convertedLeadsThisMonth: 0,
+    dealsInProgress: 0,
+    dealsWonThisMonth: 0,
+    revenueThisMonth: 0,
+    commissionsPending: 0,
+    recentActivities: [],
+    topAgents: [],
+    propertyByType: [],
+    leadsBySource: [],
+  };
   const activities = dashboard?.recentActivities || [];
+
+  // Calcular cambios porcentuales (mock data para ahora)
+  const propertiesChange = 5.2;
+  const leadsChange = 12.3;
+  const dealsChange = 8.7;
+  const revenueChange = 15.5;
 
   // Formatear números
   const formatNumber = (num: number) => {
@@ -100,13 +124,13 @@ export const DashboardPage: React.FC = () => {
                 {formatNumber(stats.totalProperties)}
               </p>
               <div className="flex items-center mt-1">
-                {stats.propertiesChange >= 0 ? (
+                {propertiesChange >= 0 ? (
                   <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
                 ) : (
                   <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
                 )}
-                <p className={`text-sm ${stats.propertiesChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(stats.propertiesChange)}% este mes
+                <p className={`text-sm ${propertiesChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {Math.abs(propertiesChange)}% este mes
                 </p>
               </div>
             </div>
@@ -125,13 +149,13 @@ export const DashboardPage: React.FC = () => {
                 {formatNumber(stats.totalLeads)}
               </p>
               <div className="flex items-center mt-1">
-                {stats.leadsChange >= 0 ? (
+                {leadsChange >= 0 ? (
                   <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
                 ) : (
                   <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
                 )}
-                <p className={`text-sm ${stats.leadsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(stats.leadsChange)}% este mes
+                <p className={`text-sm ${leadsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {Math.abs(leadsChange)}% este mes
                 </p>
               </div>
             </div>
@@ -150,13 +174,13 @@ export const DashboardPage: React.FC = () => {
                 {formatNumber(stats.totalDeals)}
               </p>
               <div className="flex items-center mt-1">
-                {stats.dealsChange >= 0 ? (
+                {dealsChange >= 0 ? (
                   <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
                 ) : (
                   <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
                 )}
-                <p className={`text-sm ${stats.dealsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(stats.dealsChange)}% este mes
+                <p className={`text-sm ${dealsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {Math.abs(dealsChange)}% este mes
                 </p>
               </div>
             </div>
@@ -175,13 +199,13 @@ export const DashboardPage: React.FC = () => {
                 {formatCurrency(stats.totalRevenue)}
               </p>
               <div className="flex items-center mt-1">
-                {stats.revenueChange >= 0 ? (
+                {revenueChange >= 0 ? (
                   <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
                 ) : (
                   <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
                 )}
-                <p className={`text-sm ${stats.revenueChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(stats.revenueChange)}% este mes
+                <p className={`text-sm ${revenueChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {Math.abs(revenueChange)}% este mes
                 </p>
               </div>
             </div>
@@ -233,15 +257,15 @@ export const DashboardPage: React.FC = () => {
               <PieChart>
                 <Pie
                   data={[
-                    { name: 'Propiedades', value: Math.abs(stats.propertiesChange), color: '#1e40af' },
-                    { name: 'Leads', value: Math.abs(stats.leadsChange), color: '#2563eb' },
-                    { name: 'Deals', value: Math.abs(stats.dealsChange), color: '#7c3aed' },
-                    { name: 'Ingresos', value: Math.abs(stats.revenueChange), color: '#16a34a' },
+                    { name: 'Propiedades', value: Math.abs(propertiesChange), color: '#1e40af' },
+                    { name: 'Leads', value: Math.abs(leadsChange), color: '#2563eb' },
+                    { name: 'Deals', value: Math.abs(dealsChange), color: '#7c3aed' },
+                    { name: 'Ingresos', value: Math.abs(revenueChange), color: '#16a34a' },
                   ]}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"

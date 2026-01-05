@@ -2,7 +2,7 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum DevelopmentStatus {
+export enum DevelopmentStatus {
   Planeacion = 1,
   EnProgreso = 2,
   Completado = 3,

@@ -2,7 +2,7 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum ContractType {
+export enum ContractType {
   CompraVenta = 1,
   Arrendamiento = 2,
   Promesa = 3,
@@ -12,7 +12,7 @@ export const enum ContractType {
   Otro = 7,
 }
 
-export const enum ContractStatus {
+export enum ContractStatus {
   Borrador = 1,
   EnRevision = 2,
   Firmado = 3,

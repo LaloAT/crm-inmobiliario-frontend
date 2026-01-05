@@ -1,5 +1,5 @@
 import axiosInstance from '../config/axios.config';
-import type { Lot, CreateLotDto, UpdateLotDto } from '../types/lot.types';
+import type { Lot, CreateLotDto, UpdateLotDto, LotStatus } from '../types/lot.types';
 
 export const lotService = {
   /**
@@ -71,7 +71,7 @@ export const lotService = {
   /**
    * Actualizar el estado de un lote
    */
-  updateStatus: async (lotId: string, status: string): Promise<Lot> => {
+  updateStatus: async (lotId: string, status: LotStatus | string): Promise<Lot> => {
     try {
       const response = await axiosInstance.put(
         `/api/v1/developments/lots/${lotId}/status`,
@@ -112,7 +112,7 @@ export const lotService = {
    * Nota: El backend no tiene endpoint para eliminar lotes individuales
    * Los lotes se eliminan al eliminar el development
    */
-  delete: async (id: string): Promise<void> => {
+  delete: async (): Promise<void> => {
     console.warn('La eliminación de lotes no está soportada por el backend');
     throw new Error('La eliminación de lotes no está soportada. Elimina el desarrollo completo.');
   },

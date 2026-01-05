@@ -2,7 +2,7 @@
 // ENUMS (usando valores numéricos del API)
 // ===========================
 
-export const enum ShiftStatus {
+export enum ShiftStatus {
   Programado = 1,
   EnProgreso = 2,
   Completado = 3,
@@ -10,7 +10,7 @@ export const enum ShiftStatus {
   NoAsistio = 5,
 }
 
-export const enum DayOfWeek {
+export enum DayOfWeek {
   Domingo = 0,
   Lunes = 1,
   Martes = 2,

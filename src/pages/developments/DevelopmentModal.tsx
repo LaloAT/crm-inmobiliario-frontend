@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Loader2, Plus, Trash2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { developmentSchema, type DevelopmentFormData } from '../../schemas/development.schema';
 import { developmentService } from '../../services/development.service';
+import { useAuth } from '../../context/AuthContext';
+import { DevelopmentStatus } from '../../types/development.types';
 import type { Development } from '../../types/development.types';
 
 interface DevelopmentModalProps {
@@ -20,22 +22,16 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
   development,
 }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isEditing = !!development;
-  const [amenities, setAmenities] = useState<string[]>([]);
-  const [newAmenity, setNewAmenity] = useState('');
 
   const {
     register,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors },
   } = useForm<DevelopmentFormData>({
     resolver: zodResolver(developmentSchema),
-    defaultValues: {
-      status: 'PLANNING',
-      amenities: [],
-    },
   });
 
   // Reset form when development changes
@@ -45,40 +41,39 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
         name: development.name,
         description: development.description || '',
         location: development.location,
-        developer: development.developer || '',
+        address: development.address || '',
+        city: development.city || '',
+        state: development.state || '',
+        zipCode: development.zipCode || '',
         status: development.status,
         startDate: development.startDate
           ? new Date(development.startDate).toISOString().split('T')[0]
           : '',
-        estimatedCompletionDate: development.estimatedCompletionDate
-          ? new Date(development.estimatedCompletionDate).toISOString().split('T')[0]
+        endDate: development.endDate
+          ? new Date(development.endDate).toISOString().split('T')[0]
           : '',
         totalLots: development.totalLots,
-        availableLots: development.availableLots,
-        amenities: development.amenities || [],
+        totalArea: development.totalArea,
+        mapImageUrl: development.mapImageUrl || '',
       });
-      setAmenities(development.amenities || []);
     } else {
       reset({
         name: '',
         description: '',
         location: '',
-        developer: '',
-        status: 'PLANNING',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        status: DevelopmentStatus.Planeacion,
         startDate: '',
-        estimatedCompletionDate: '',
+        endDate: '',
         totalLots: 0,
-        availableLots: 0,
-        amenities: [],
+        totalArea: undefined,
+        mapImageUrl: '',
       });
-      setAmenities([]);
     }
   }, [development, reset]);
-
-  // Update amenities in form
-  useEffect(() => {
-    setValue('amenities', amenities);
-  }, [amenities, setValue]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -87,7 +82,6 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
       queryClient.invalidateQueries({ queryKey: ['developments'] });
       onClose();
       reset();
-      setAmenities([]);
     },
   });
 
@@ -99,7 +93,6 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
       queryClient.invalidateQueries({ queryKey: ['developments'] });
       onClose();
       reset();
-      setAmenities([]);
     },
   });
 
@@ -107,19 +100,15 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
     if (isEditing) {
       updateMutation.mutate(data);
     } else {
-      createMutation.mutate(data);
+      if (!user?.organizationId) {
+        console.error('No organization ID available');
+        return;
+      }
+      createMutation.mutate({
+        ...data,
+        organizationId: user.organizationId,
+      });
     }
-  };
-
-  const handleAddAmenity = () => {
-    if (newAmenity.trim()) {
-      setAmenities([...amenities, newAmenity.trim()]);
-      setNewAmenity('');
-    }
-  };
-
-  const handleRemoveAmenity = (index: number) => {
-    setAmenities(amenities.filter((_, i) => i !== index));
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
@@ -174,19 +163,45 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
                 )}
               </div>
 
-              {/* Location and Developer */}
+              {/* Location */}
+              <Input
+                label="Ubicación"
+                {...register('location')}
+                error={errors.location?.message}
+                required
+              />
+
+              {/* Address details */}
+              <div className="grid grid-cols-3 gap-4">
+                <Input
+                  label="Dirección"
+                  {...register('address')}
+                  error={errors.address?.message}
+                />
+                <Input
+                  label="Ciudad"
+                  {...register('city')}
+                  error={errors.city?.message}
+                />
+                <Input
+                  label="Estado"
+                  {...register('state')}
+                  error={errors.state?.message}
+                />
+              </div>
+
+              {/* Zip Code */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Ubicación"
-                  {...register('location')}
-                  error={errors.location?.message}
-                  required
+                  label="Código Postal"
+                  {...register('zipCode')}
+                  error={errors.zipCode?.message}
                 />
-
                 <Input
-                  label="Desarrollador"
-                  {...register('developer')}
-                  error={errors.developer?.message}
+                  label="Área Total (m²)"
+                  type="number"
+                  {...register('totalArea', { valueAsNumber: true })}
+                  error={errors.totalArea?.message}
                 />
               </div>
 
@@ -197,13 +212,13 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
                     Estado <span className="text-red-500">*</span>
                   </label>
                   <select
-                    {...register('status')}
+                    {...register('status', { valueAsNumber: true })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
-                    <option value="PLANNING">En Planeación</option>
-                    <option value="CONSTRUCTION">En Construcción</option>
-                    <option value="COMPLETED">Completado</option>
-                    <option value="CANCELLED">Cancelado</option>
+                    <option value={1}>Planeación</option>
+                    <option value={2}>En Progreso</option>
+                    <option value={3}>Completado</option>
+                    <option value={4}>Cancelado</option>
                   </select>
                   {errors.status && (
                     <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
@@ -218,70 +233,21 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
                 />
 
                 <Input
-                  label="Fecha Est. Finalización"
+                  label="Fecha de Finalización"
                   type="date"
-                  {...register('estimatedCompletionDate')}
-                  error={errors.estimatedCompletionDate?.message}
+                  {...register('endDate')}
+                  error={errors.endDate?.message}
                 />
               </div>
 
-              {/* Lots */}
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Total de Lotes"
-                  type="number"
-                  {...register('totalLots', { valueAsNumber: true })}
-                  error={errors.totalLots?.message}
-                />
-
-                <Input
-                  label="Lotes Disponibles"
-                  type="number"
-                  {...register('availableLots', { valueAsNumber: true })}
-                  error={errors.availableLots?.message}
-                />
-              </div>
-
-              {/* Amenities */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amenidades
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={newAmenity}
-                    onChange={(e) => setNewAmenity(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAmenity())}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Ej: Alberca, Gym, Áreas verdes..."
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddAmenity}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {amenities.map((amenity, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-1 px-2 py-1 bg-primary-50 text-primary-700 rounded text-sm"
-                    >
-                      <span>{amenity}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveAmenity(index)}
-                        className="text-primary-600 hover:text-primary-800"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Total Lots */}
+              <Input
+                label="Total de Lotes"
+                type="number"
+                {...register('totalLots', { valueAsNumber: true })}
+                error={errors.totalLots?.message}
+                required
+              />
             </div>
 
             {/* Footer */}

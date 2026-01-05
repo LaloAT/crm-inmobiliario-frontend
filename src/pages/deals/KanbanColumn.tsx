@@ -24,7 +24,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
     id: stage.id.toString(),
   });
 
-  const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0);
+  const totalValue = deals.reduce((sum, deal) => sum + deal.expectedAmount, 0);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-MX', {

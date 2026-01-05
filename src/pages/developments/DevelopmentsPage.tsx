@@ -4,6 +4,7 @@ import { Card, CardBody, Button } from '../../components/ui';
 import { Plus, Pencil, Trash2, Loader2, Building, MapPin, Calendar, Layers } from 'lucide-react';
 import { developmentService } from '../../services/development.service';
 import { DevelopmentModal } from './DevelopmentModal';
+import { DevelopmentStatus } from '../../types/development.types';
 import type { Development } from '../../types/development.types';
 
 export const DevelopmentsPage: React.FC = () => {
@@ -12,16 +13,16 @@ export const DevelopmentsPage: React.FC = () => {
   const [selectedDevelopment, setSelectedDevelopment] = useState<Development | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<DevelopmentStatus | undefined>(undefined);
 
   // Fetch developments
   const { data: developmentsData, isLoading } = useQuery({
     queryKey: ['developments', currentPage, statusFilter],
     queryFn: () =>
       developmentService.getAll({
-        page: currentPage,
-        limit: 12,
-        status: statusFilter || undefined,
+        pageNumber: currentPage,
+        pageSize: 12,
+        status: statusFilter,
       }),
   });
 
@@ -60,22 +61,22 @@ export const DevelopmentsPage: React.FC = () => {
   };
 
   // Helper functions
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      PLANNING: 'En Planeación',
-      CONSTRUCTION: 'En Construcción',
-      COMPLETED: 'Completado',
-      CANCELLED: 'Cancelado',
+  const getStatusLabel = (status: DevelopmentStatus) => {
+    const labels: Record<DevelopmentStatus, string> = {
+      [DevelopmentStatus.Planeacion]: 'Planeación',
+      [DevelopmentStatus.EnProgreso]: 'En Progreso',
+      [DevelopmentStatus.Completado]: 'Completado',
+      [DevelopmentStatus.Cancelado]: 'Cancelado',
     };
-    return labels[status] || status;
+    return labels[status] || 'Desconocido';
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      PLANNING: 'bg-blue-100 text-blue-800',
-      CONSTRUCTION: 'bg-yellow-100 text-yellow-800',
-      COMPLETED: 'bg-green-100 text-green-800',
-      CANCELLED: 'bg-red-100 text-red-800',
+  const getStatusColor = (status: DevelopmentStatus) => {
+    const colors: Record<DevelopmentStatus, string> = {
+      [DevelopmentStatus.Planeacion]: 'bg-blue-100 text-blue-800',
+      [DevelopmentStatus.EnProgreso]: 'bg-yellow-100 text-yellow-800',
+      [DevelopmentStatus.Completado]: 'bg-green-100 text-green-800',
+      [DevelopmentStatus.Cancelado]: 'bg-red-100 text-red-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -88,8 +89,8 @@ export const DevelopmentsPage: React.FC = () => {
     });
   };
 
-  const developments = developmentsData?.data || [];
-  const totalPages = Math.ceil((developmentsData?.total || 0) / (developmentsData?.limit || 12));
+  const developments = developmentsData?.items || [];
+  const totalPages = developmentsData?.totalPages || 0;
 
   return (
     <div className="space-y-6">
@@ -113,17 +114,17 @@ export const DevelopmentsPage: React.FC = () => {
           <div className="flex gap-4">
             <select
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              value={statusFilter}
+              value={statusFilter ?? ''}
               onChange={(e) => {
-                setStatusFilter(e.target.value);
+                setStatusFilter(e.target.value ? Number(e.target.value) as DevelopmentStatus : undefined);
                 setCurrentPage(1);
               }}
             >
               <option value="">Todos los estados</option>
-              <option value="PLANNING">En Planeación</option>
-              <option value="CONSTRUCTION">En Construcción</option>
-              <option value="COMPLETED">Completado</option>
-              <option value="CANCELLED">Cancelado</option>
+              <option value={DevelopmentStatus.Planeacion}>Planeación</option>
+              <option value={DevelopmentStatus.EnProgreso}>En Progreso</option>
+              <option value={DevelopmentStatus.Completado}>Completado</option>
+              <option value={DevelopmentStatus.Cancelado}>Cancelado</option>
             </select>
           </div>
         </CardBody>
@@ -181,13 +182,6 @@ export const DevelopmentsPage: React.FC = () => {
                       </p>
                     )}
 
-                    {/* Developer */}
-                    {development.developer && (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Desarrollador:</span> {development.developer}
-                      </div>
-                    )}
-
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200">
                       <div>
@@ -206,32 +200,10 @@ export const DevelopmentsPage: React.FC = () => {
                           Finalización
                         </div>
                         <p className="text-sm font-medium text-gray-900">
-                          {formatDate(development.estimatedCompletionDate)}
+                          {formatDate(development.endDate)}
                         </p>
                       </div>
                     </div>
-
-                    {/* Amenities */}
-                    {development.amenities && development.amenities.length > 0 && (
-                      <div className="pt-3 border-t border-gray-200">
-                        <p className="text-xs font-medium text-gray-700 mb-2">Amenidades:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {development.amenities.slice(0, 3).map((amenity, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
-                            >
-                              {amenity}
-                            </span>
-                          ))}
-                          {development.amenities.length > 3 && (
-                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                              +{development.amenities.length - 3} más
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Actions */}
                     <div className="flex gap-2 pt-3 border-t border-gray-200">

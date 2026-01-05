@@ -33,16 +33,20 @@ export const LotsPage: React.FC = () => {
   // Fetch developments for filter
   const { data: developmentsData } = useQuery({
     queryKey: ['developments'],
-    queryFn: () => developmentService.getAll({ limit: 100 }),
+    queryFn: () => developmentService.getAll({ pageNumber: 1, pageSize: 100 }),
   });
 
-  const developments = developmentsData?.data || [];
+  const developments = developmentsData?.items || [];
 
-  // Delete mutation
+  // Delete mutation - Note: Backend doesn't support deleting individual lots
   const deleteMutation = useMutation({
     mutationFn: lotService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lots'] });
+      setDeleteConfirm(null);
+    },
+    onError: (error: Error) => {
+      alert(error.message || 'No se puede eliminar el lote');
       setDeleteConfirm(null);
     },
   });
@@ -58,12 +62,12 @@ export const LotsPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (deleteConfirm === id) {
-      deleteMutation.mutate(id);
+  const handleDelete = (_id: string) => {
+    if (deleteConfirm === _id) {
+      deleteMutation.mutate();
     } else {
-      setDeleteConfirm(id);
-      setTimeout(() => setDeleteConfirm(null), 3000);
+      setDeleteConfirm(_id);
+      void setTimeout(() => setDeleteConfirm(null), 3000);
     }
   };
 
@@ -73,20 +77,26 @@ export const LotsPage: React.FC = () => {
   };
 
   // Helper functions
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
+  const getStatusLabel = (status: number | string) => {
+    const labels: Record<string | number, string> = {
       AVAILABLE: 'Disponible',
       RESERVED: 'Reservado',
       SOLD: 'Vendido',
+      1: 'Disponible',
+      2: 'Reservado',
+      3: 'Vendido',
     };
-    return labels[status] || status;
+    return labels[status] || String(status);
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
+  const getStatusColor = (status: number | string) => {
+    const colors: Record<string | number, string> = {
       AVAILABLE: 'bg-green-100 text-green-800',
       RESERVED: 'bg-yellow-100 text-yellow-800',
       SOLD: 'bg-red-100 text-red-800',
+      1: 'bg-green-100 text-green-800',
+      2: 'bg-yellow-100 text-yellow-800',
+      3: 'bg-red-100 text-red-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -131,7 +141,7 @@ export const LotsPage: React.FC = () => {
               }}
             >
               <option value="">Todos los desarrollos</option>
-              {developments.map((dev) => (
+              {developments.map((dev: { id: string; name: string }) => (
                 <option key={dev.id} value={dev.id}>
                   {dev.name}
                 </option>
@@ -197,7 +207,7 @@ export const LotsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {lots.map((lot) => (
+                  {lots.map((lot: Lot) => (
                     <tr key={lot.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -218,18 +228,12 @@ export const LotsPage: React.FC = () => {
                         <div className="text-sm text-gray-900">
                           {lot.development?.name || 'N/A'}
                         </div>
-                        {lot.location && (
-                          <div className="text-xs text-gray-500">{lot.location}</div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-900">
                           <Maximize2 className="w-4 h-4 mr-1 text-gray-400" />
                           {lot.area} m²
                         </div>
-                        {lot.dimensions && (
-                          <div className="text-xs text-gray-500">{lot.dimensions}</div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
