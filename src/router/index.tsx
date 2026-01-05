@@ -4,6 +4,8 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { LeadsPage } from '../pages/leads/LeadsPage';
 import { PropertiesPage } from '../pages/properties/PropertiesPage';
 import { DealsPage } from '../pages/deals/DealsPage';
+import { ContractsPage } from '../pages/contracts/ContractsPage';
+import { DevelopmentsPage } from '../pages/developments/DevelopmentsPage';
 import { MainLayout } from '../components/layout';
 import { ProtectedRoute } from '../components/common/ProtectedRoute';
 
@@ -50,11 +52,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'contracts',
-        element: <PlaceholderPage title="Contratos" />,
+        element: <ContractsPage />,
       },
       {
         path: 'developments',
-        element: <PlaceholderPage title="Desarrollos" />,
+        element: <DevelopmentsPage />,
       },
       {
         path: 'lots',
