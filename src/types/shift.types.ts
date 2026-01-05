@@ -28,10 +28,10 @@ export interface Shift {
   id: string;
   userId: string;
   developmentId?: string;
-  date: string; // "2024-01-15"
-  startTime: string; // "09:00"
-  endTime: string; // "18:00"
-  status: ShiftStatus;
+  shiftDate: string; // "2024-01-15T00:00:00Z"
+  startTime: string; // "2024-01-15T09:00:00Z"
+  endTime: string; // "2024-01-15T18:00:00Z"
+  status: number; // 1-5
   // User info
   user?: {
     id: string;
@@ -46,10 +46,10 @@ export interface Shift {
     location: string;
   };
   // Check-in/Check-out
-  checkInTime?: string; // "2024-01-15T09:05:00"
+  checkInTime?: string; // "2024-01-15T09:05:00Z"
   checkInLatitude?: number;
   checkInLongitude?: number;
-  checkOutTime?: string; // "2024-01-15T18:02:00"
+  checkOutTime?: string; // "2024-01-15T18:02:00Z"
   checkOutLatitude?: number;
   checkOutLongitude?: number;
   // Performance
@@ -64,9 +64,11 @@ export interface Shift {
 export interface CreateShiftDto {
   userId: string;
   developmentId?: string;
-  date: string; // "2024-01-15"
-  startTime: string; // "09:00"
-  endTime: string; // "18:00"
+  shiftDate: string; // "2024-01-15"
+  startTime: string; // ISO string
+  endTime: string; // ISO string
+  status?: number;
+  notes?: string;
 }
 
 export interface CreateBulkShiftsDto {
@@ -80,24 +82,29 @@ export interface CreateBulkShiftsDto {
 }
 
 export interface UpdateShiftDto {
-  date?: string;
+  userId?: string;
+  shiftDate?: string;
   startTime?: string;
   endTime?: string;
   developmentId?: string;
+  status?: number;
   notes?: string;
 }
 
 export interface CheckInDto {
-  latitude?: number;
-  longitude?: number;
+  checkInTime: string;
+  checkInNotes?: string;
+  checkInLatitude?: number;
+  checkInLongitude?: number;
 }
 
 export interface CheckOutDto {
+  checkOutTime: string;
+  checkOutNotes?: string;
+  checkOutLatitude?: number;
+  checkOutLongitude?: number;
   leadsGenerated?: number;
   visitsAttended?: number;
-  notes?: string;
-  latitude?: number;
-  longitude?: number;
 }
 
 // ===========================

@@ -36,17 +36,17 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
   // Fetch leads for dropdown
   const { data: leadsData } = useQuery({
     queryKey: ['leads'],
-    queryFn: () => leadService.getAll({ limit: 100 }),
+    queryFn: () => leadService.getAll({ pageSize: 100 }),
   });
 
   // Fetch properties for dropdown
   const { data: propertiesData } = useQuery({
     queryKey: ['properties'],
-    queryFn: () => propertyService.getAll({ limit: 100 }),
+    queryFn: () => propertyService.getAll({ pageSize: 100 }),
   });
 
-  const leads = leadsData?.data || [];
-  const properties = propertiesData?.data || [];
+  const leads = leadsData?.items || [];
+  const properties = propertiesData?.items || [];
 
   // Reset form when deal changes
   useEffect(() => {
@@ -54,7 +54,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
       reset({
         title: deal.title,
         description: deal.description || '',
-        value: deal.value,
+        value: deal.expectedAmount,
         stage: deal.stage,
         probability: deal.probability || 0,
         expectedCloseDate: deal.expectedCloseDate

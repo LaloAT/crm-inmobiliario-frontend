@@ -10,6 +10,8 @@ import { LotsPage } from '../pages/lots/LotsPage';
 import { CommissionsPage } from '../pages/commissions/CommissionsPage';
 import { UsersPage } from '../pages/users/UsersPage';
 import { OrganizationsPage } from '../pages/organizations/OrganizationsPage';
+import { ReportsPage } from '../pages/reports/ReportsPage';
+import { ShiftsPage } from '../pages/shifts/ShiftsPage';
 import { MainLayout } from '../components/layout';
 import { ProtectedRoute } from '../components/common/ProtectedRoute';
 
@@ -72,7 +74,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'reports',
-        element: <PlaceholderPage title="Reportes" />,
+        element: <ReportsPage />,
       },
       {
         path: 'users',
@@ -84,7 +86,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'shifts',
-        element: <PlaceholderPage title="Turnos" />,
+        element: <ShiftsPage />,
       },
       {
         path: 'settings',

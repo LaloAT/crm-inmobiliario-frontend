@@ -58,7 +58,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onEdit, onDelete }) =>
           <div className="flex items-center gap-1 mb-2">
             <TrendingUp className="w-3 h-3 text-green-600" />
             <span className="text-lg font-bold text-gray-900">
-              {formatCurrency(deal.value)}
+              {formatCurrency(deal.expectedAmount)}
             </span>
           </div>
 

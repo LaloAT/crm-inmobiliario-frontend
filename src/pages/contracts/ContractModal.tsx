@@ -33,25 +33,26 @@ export const ContractModal: React.FC<ContractModalProps> = ({ isOpen, onClose, c
   });
 
   // Fetch deals for dropdown
-  const { data: deals = [] } = useQuery({
+  const { data: dealsData } = useQuery({
     queryKey: ['deals'],
-    queryFn: () => dealService.getAll(),
+    queryFn: () => dealService.getAll({ pageSize: 100 }),
   });
 
   // Fetch properties for dropdown
   const { data: propertiesData } = useQuery({
     queryKey: ['properties'],
-    queryFn: () => propertyService.getAll({ limit: 100 }),
+    queryFn: () => propertyService.getAll({ pageSize: 100 }),
   });
 
-  const properties = propertiesData?.data || [];
+  const deals = dealsData?.items || [];
+  const properties = propertiesData?.items || [];
 
   // Reset form when contract changes
   useEffect(() => {
     if (contract) {
       reset({
         contractNumber: contract.contractNumber,
-        contractDate: new Date(contract.contractDate).toISOString().split('T')[0],
+        contractDate: new Date(contract.startDate).toISOString().split('T')[0],
         startDate: contract.startDate
           ? new Date(contract.startDate).toISOString().split('T')[0]
           : '',
@@ -63,8 +64,8 @@ export const ContractModal: React.FC<ContractModalProps> = ({ isOpen, onClose, c
         terms: contract.terms || '',
         dealId: contract.dealId,
         propertyId: contract.propertyId,
-        signedDate: contract.signedDate
-          ? new Date(contract.signedDate).toISOString().split('T')[0]
+        signedDate: contract.signedAt
+          ? new Date(contract.signedAt).toISOString().split('T')[0]
           : null,
       });
     } else {

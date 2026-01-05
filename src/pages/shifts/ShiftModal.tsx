@@ -3,39 +3,43 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Loader2 } from 'lucide-react';
+import { z } from 'zod';
 import { Button, Input } from '../../components/ui';
-import { commissionSchema, type CommissionFormData } from '../../schemas/commission.schema';
-import { commissionService } from '../../services/commission.service';
-import { dealService } from '../../services/deal.service';
+import { shiftService } from '../../services/shift.service';
 import { userService } from '../../services/user.service';
-import type { Commission } from '../../types/commission.types';
+import type { Shift } from '../../types/shift.types';
 
-interface CommissionModalProps {
+const shiftSchema = z.object({
+  userId: z.string().min(1, 'Usuario es requerido'),
+  shiftDate: z.string().min(1, 'Fecha es requerida'),
+  startTime: z.string().min(1, 'Hora de inicio es requerida'),
+  endTime: z.string().min(1, 'Hora de fin es requerida'),
+  status: z.number().int().min(1).max(5),
+  notes: z.string().optional(),
+});
+
+type ShiftFormData = z.infer<typeof shiftSchema>;
+
+interface ShiftModalProps {
   isOpen: boolean;
   onClose: () => void;
-  commission: Commission | null;
+  shift: Shift | null;
 }
 
-export const CommissionModal: React.FC<CommissionModalProps> = ({ isOpen, onClose, commission }) => {
+export const ShiftModal: React.FC<ShiftModalProps> = ({ isOpen, onClose, shift }) => {
   const queryClient = useQueryClient();
-  const isEditing = !!commission;
+  const isEditing = !!shift;
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<CommissionFormData>({
-    resolver: zodResolver(commissionSchema),
+  } = useForm<ShiftFormData>({
+    resolver: zodResolver(shiftSchema),
     defaultValues: {
-      status: 'PENDING',
+      status: 1, // Scheduled
     },
-  });
-
-  // Fetch deals for dropdown
-  const { data: dealsData } = useQuery({
-    queryKey: ['deals'],
-    queryFn: () => dealService.getAll({ pageSize: 100 }),
   });
 
   // Fetch users for dropdown
@@ -44,41 +48,49 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ isOpen, onClos
     queryFn: () => userService.getAll({ pageSize: 100 }),
   });
 
-  const deals = dealsData?.items || [];
   const users = usersData?.items || [];
 
-  // Reset form when commission changes
+  // Reset form when shift changes
   useEffect(() => {
-    if (commission) {
+    if (shift) {
       reset({
-        dealId: commission.dealId,
-        userId: commission.userId,
-        amount: commission.amount,
-        percentage: commission.percentage,
-        status: commission.status,
-        dueDate: commission.dueDate || '',
-        paidDate: commission.paidDate || '',
-        notes: commission.notes || '',
+        userId: shift.userId,
+        shiftDate: new Date(shift.shiftDate).toISOString().split('T')[0],
+        startTime: new Date(shift.startTime).toTimeString().slice(0, 5),
+        endTime: new Date(shift.endTime).toTimeString().slice(0, 5),
+        status: shift.status,
+        notes: shift.notes || '',
       });
     } else {
       reset({
-        dealId: '',
         userId: '',
-        amount: 0,
-        percentage: 0,
-        status: 'PENDING',
-        dueDate: '',
-        paidDate: '',
+        shiftDate: new Date().toISOString().split('T')[0],
+        startTime: '09:00',
+        endTime: '18:00',
+        status: 1,
         notes: '',
       });
     }
-  }, [commission, reset]);
+  }, [shift, reset]);
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: commissionService.create,
+    mutationFn: (data: ShiftFormData) => {
+      // Combine date and time into ISO strings
+      const startDateTime = new Date(`${data.shiftDate}T${data.startTime}:00`).toISOString();
+      const endDateTime = new Date(`${data.shiftDate}T${data.endTime}:00`).toISOString();
+
+      return shiftService.create({
+        userId: data.userId,
+        shiftDate: data.shiftDate,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        status: data.status,
+        notes: data.notes,
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commissions'] });
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
       onClose();
       reset();
     },
@@ -86,15 +98,28 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ isOpen, onClos
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: CommissionFormData) => commissionService.update(commission!.id, data),
+    mutationFn: (data: ShiftFormData) => {
+      // Combine date and time into ISO strings
+      const startDateTime = new Date(`${data.shiftDate}T${data.startTime}:00`).toISOString();
+      const endDateTime = new Date(`${data.shiftDate}T${data.endTime}:00`).toISOString();
+
+      return shiftService.update(shift!.id, {
+        userId: data.userId,
+        shiftDate: data.shiftDate,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        status: data.status,
+        notes: data.notes,
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commissions'] });
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
       onClose();
       reset();
     },
   });
 
-  const onSubmit = (data: CommissionFormData) => {
+  const onSubmit = (data: ShiftFormData) => {
     if (isEditing) {
       updateMutation.mutate(data);
     } else {
@@ -120,7 +145,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ isOpen, onClos
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">
-              {isEditing ? 'Editar Comisión' : 'Crear Comisión'}
+              {isEditing ? 'Editar Turno' : 'Crear Turno'}
             </h3>
             <button
               onClick={onClose}
@@ -133,37 +158,16 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ isOpen, onClos
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="px-6 py-4 space-y-4">
-              {/* Deal */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Deal <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...register('dealId')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="">Seleccionar deal...</option>
-                  {deals.map((deal) => (
-                    <option key={deal.id} value={deal.id}>
-                      {deal.title}
-                    </option>
-                  ))}
-                </select>
-                {errors.dealId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.dealId.message}</p>
-                )}
-              </div>
-
               {/* User */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Agente <span className="text-red-500">*</span>
+                  Usuario <span className="text-red-500">*</span>
                 </label>
                 <select
                   {...register('userId')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="">Seleccionar agente...</option>
+                  <option value="">Seleccionar usuario...</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.fullName}
@@ -175,23 +179,30 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ isOpen, onClos
                 )}
               </div>
 
-              {/* Amount and Percentage */}
+              {/* Date */}
+              <Input
+                label="Fecha"
+                type="date"
+                {...register('shiftDate')}
+                error={errors.shiftDate?.message}
+                required
+              />
+
+              {/* Time Range */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Monto"
-                  type="number"
-                  step="0.01"
-                  {...register('amount', { valueAsNumber: true })}
-                  error={errors.amount?.message}
+                  label="Hora de Inicio"
+                  type="time"
+                  {...register('startTime')}
+                  error={errors.startTime?.message}
                   required
                 />
 
                 <Input
-                  label="Porcentaje (%)"
-                  type="number"
-                  step="0.01"
-                  {...register('percentage', { valueAsNumber: true })}
-                  error={errors.percentage?.message}
+                  label="Hora de Fin"
+                  type="time"
+                  {...register('endTime')}
+                  error={errors.endTime?.message}
                   required
                 />
               </div>
@@ -202,33 +213,18 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ isOpen, onClos
                   Estado <span className="text-red-500">*</span>
                 </label>
                 <select
-                  {...register('status')}
+                  {...register('status', { valueAsNumber: true })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="PENDING">Pendiente</option>
-                  <option value="APPROVED">Aprobada</option>
-                  <option value="PAID">Pagada</option>
+                  <option value={1}>Programado</option>
+                  <option value={2}>Activo</option>
+                  <option value={3}>Completado</option>
+                  <option value={4}>Cancelado</option>
+                  <option value={5}>No asistió</option>
                 </select>
                 {errors.status && (
                   <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
                 )}
-              </div>
-
-              {/* Due Date and Paid Date */}
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Fecha de Vencimiento"
-                  type="date"
-                  {...register('dueDate')}
-                  error={errors.dueDate?.message}
-                />
-
-                <Input
-                  label="Fecha de Pago"
-                  type="date"
-                  {...register('paidDate')}
-                  error={errors.paidDate?.message}
-                />
               </div>
 
               {/* Notes */}
@@ -240,7 +236,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ isOpen, onClos
                   {...register('notes')}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Notas adicionales sobre la comisión..."
+                  placeholder="Notas adicionales sobre el turno..."
                 />
                 {errors.notes && (
                   <p className="mt-1 text-sm text-red-600">{errors.notes.message}</p>

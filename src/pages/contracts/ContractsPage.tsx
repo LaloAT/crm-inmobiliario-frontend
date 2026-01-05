@@ -194,16 +194,16 @@ export const ContractsPage: React.FC = () => {
                           {contract.property?.title || 'N/A'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {contract.property?.address || ''}
+                          {contract.property?.title || ''}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {formatDate(contract.contractDate)}
+                          {formatDate(contract.startDate)}
                         </div>
-                        {contract.signedDate && (
+                        {contract.signedAt && (
                           <div className="text-xs text-gray-500">
-                            Firmado: {formatDate(contract.signedDate)}
+                            Firmado: {formatDate(contract.signedAt)}
                           </div>
                         )}
                       </td>
