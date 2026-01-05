@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
+import { LeadsPage } from '../pages/leads/LeadsPage';
 import { MainLayout } from '../components/layout';
 import { ProtectedRoute } from '../components/common/ProtectedRoute';
 
@@ -39,7 +40,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'leads',
-        element: <PlaceholderPage title="Leads" />,
+        element: <LeadsPage />,
       },
       {
         path: 'deals',
