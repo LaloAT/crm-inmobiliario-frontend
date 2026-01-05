@@ -39,16 +39,13 @@ export const LoginPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
-      console.log('📝 LoginPage: Iniciando proceso de login...');
       await login(data);
-      console.log('✅ LoginPage: Login completado, navegando a dashboard...');
-      console.log('🔍 LoginPage: isAuthenticated =', isAuthenticated);
 
-      // Forzar un pequeño delay para que React actualice el estado
+      // Pequeño delay para que React actualice el estado
       await new Promise(resolve => setTimeout(resolve, 100));
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      console.error('❌ LoginPage: Error en login:', err);
+      console.error('Login error:', err);
       setError(
         err.response?.data?.message ||
         'Error al iniciar sesión. Verifica tus credenciales.'

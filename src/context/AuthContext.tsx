@@ -49,14 +49,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginRequest): Promise<void> => {
     try {
-      console.log('🔐 AuthContext: Iniciando login...');
       const response = await authService.login(credentials);
-      console.log('✅ AuthContext: Login exitoso, respuesta:', response);
-      console.log('👤 AuthContext: Usuario recibido:', response.user);
       setUser(response.user);
-      console.log('✅ AuthContext: Estado actualizado, isAuthenticated debería ser true');
     } catch (error) {
-      console.error('❌ AuthContext: Login error:', error);
+      console.error('Login error:', error);
       throw error;
     }
   };

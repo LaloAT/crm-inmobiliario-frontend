@@ -13,13 +13,11 @@ export const authService = {
    * Login de usuario
    */
   login: async (credentials: LoginRequest): Promise<{ accessToken: string; refreshToken: string; user: any }> => {
-    console.log('🌐 authService: Llamando al backend para login...');
     const response = await axiosInstance.post<AuthResponse>(
       API_ENDPOINTS.AUTH.LOGIN,
       credentials
     );
 
-    console.log('📦 authService: Respuesta del backend:', response.data);
     const { accessToken, refreshToken, userId, email, fullName, role, organizationId } = response.data;
 
     // Construir el objeto user a partir de la respuesta
@@ -35,17 +33,10 @@ export const authService = {
     };
 
     // Guardar tokens y usuario en localStorage
-    console.log('💾 authService: Guardando en localStorage...');
-    console.log('  - accessToken:', accessToken ? 'OK' : 'FALTA');
-    console.log('  - refreshToken:', refreshToken ? 'OK' : 'FALTA');
-    console.log('  - user:', user ? 'OK' : 'FALTA');
-    console.log('  - user construido:', user);
-
     storage.setAccessToken(accessToken);
     storage.setRefreshToken(refreshToken);
     storage.setUser(user);
 
-    console.log('✅ authService: Datos guardados en localStorage');
     return { accessToken, refreshToken, user };
   },
 

@@ -11,7 +11,6 @@ export const storage = {
   },
 
   setAccessToken: (token: string): void => {
-    console.log('💾 storage.setAccessToken:', token?.substring(0, 20) + '...');
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
   },
 
@@ -25,7 +24,6 @@ export const storage = {
   },
 
   setRefreshToken: (token: string): void => {
-    console.log('💾 storage.setRefreshToken:', token?.substring(0, 20) + '...');
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
   },
 
@@ -48,9 +46,7 @@ export const storage = {
   },
 
   setUser: (user: any): void => {
-    console.log('💾 storage.setUser:', user);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    console.log('✅ storage: Usuario guardado en localStorage');
   },
 
   removeUser: (): void => {
