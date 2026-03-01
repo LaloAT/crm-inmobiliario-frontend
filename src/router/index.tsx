@@ -12,16 +12,9 @@ import { UsersPage } from '../pages/users/UsersPage';
 import { OrganizationsPage } from '../pages/organizations/OrganizationsPage';
 import { ReportsPage } from '../pages/reports/ReportsPage';
 import { ShiftsPage } from '../pages/shifts/ShiftsPage';
+import { SettingsPage } from '../pages/settings/SettingsPage';
 import { MainLayout } from '../components/layout';
 import { ProtectedRoute } from '../components/common/ProtectedRoute';
-
-// Placeholder pages - se crearán después
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="p-6">
-    <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-    <p className="text-gray-500 mt-4">Esta página está en construcción.</p>
-  </div>
-);
 
 export const router = createBrowserRouter([
   {
@@ -90,7 +83,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'settings',
-        element: <PlaceholderPage title="Configuración" />,
+        element: <SettingsPage />,
       },
     ],
   },
