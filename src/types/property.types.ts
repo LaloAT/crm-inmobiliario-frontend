@@ -37,6 +37,14 @@ export enum PublishStatus {
 // INTERFACES
 // ===========================
 
+export interface PropertyImage {
+  id: string;
+  url: string;
+  fileName: string;
+  isCover: boolean;
+  createdAt?: string;
+}
+
 export interface Property {
   id: string;
   organizationId: string;
@@ -76,7 +84,7 @@ export interface Property {
   ownerEmail?: string;
   // Media
   coverImageUrl?: string;
-  images?: string[];
+  images?: PropertyImage[];
   virtualTourUrl?: string;
   videoUrl?: string;
   webContent?: string;

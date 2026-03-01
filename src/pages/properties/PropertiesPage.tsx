@@ -227,7 +227,7 @@ export const PropertiesPage: React.FC = () => {
                 {/* Image */}
                 <div className="relative h-48 bg-gray-200">
                   {(() => {
-                    const imgSrc = property.coverImageUrl || property.images?.[0];
+                    const imgSrc = property.coverImageUrl || property.images?.[0]?.url;
                     return imgSrc ? (
                       <img
                         src={imgSrc}
@@ -363,7 +363,7 @@ export const PropertiesPage: React.FC = () => {
                           <div className="flex items-center">
                             <div className="h-10 w-10 flex-shrink-0 bg-gray-200 rounded">
                               {(() => {
-                                const imgSrc = property.coverImageUrl || property.images?.[0];
+                                const imgSrc = property.coverImageUrl || property.images?.[0]?.url;
                                 return imgSrc ? (
                                   <img
                                     src={imgSrc}

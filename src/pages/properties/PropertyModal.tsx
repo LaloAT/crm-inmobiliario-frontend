@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +8,7 @@ import { propertySchema, type PropertyFormData } from '../../schemas/property.sc
 import { propertyService } from '../../services/property.service';
 import { useAuth } from '../../context/AuthContext';
 import type { Property } from '../../types/property.types';
+import { PropertyImageSection } from './PropertyImageSection';
 import {
   OperationType,
   PropertyType,
@@ -29,6 +30,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isEditing = !!property;
+  const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
+  const effectivePropertyId = property?.id ?? createdPropertyId;
 
   const {
     register,
@@ -119,18 +122,20 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
         ...data,
       });
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      onClose();
-      reset();
+      setCreatedPropertyId(created.id);
     },
   });
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: PropertyFormData) => propertyService.update(property!.id, data),
+    mutationFn: (data: PropertyFormData) => propertyService.update(effectivePropertyId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      if (effectivePropertyId) {
+        queryClient.invalidateQueries({ queryKey: ['property', effectivePropertyId] });
+      }
       onClose();
       reset();
     },
@@ -146,6 +151,12 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
+  const handleClose = () => {
+    setCreatedPropertyId(null);
+    reset();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -154,7 +165,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
         {/* Background overlay */}
         <div
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-          onClick={onClose}
+          onClick={handleClose}
         />
 
         {/* Modal panel */}
@@ -162,10 +173,14 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">
-              {isEditing ? 'Editar Propiedad' : 'Crear Propiedad'}
+              {createdPropertyId
+                ? 'Propiedad Creada - Agregar Imágenes'
+                : isEditing
+                  ? 'Editar Propiedad'
+                  : 'Crear Propiedad'}
             </h3>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-gray-400 hover:text-gray-500"
             >
               <X className="w-5 h-5" />
@@ -516,23 +531,32 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
                   />
                 </div>
               </div>
+
+              {/* Images */}
+              {effectivePropertyId && (
+                <div className="border-t border-gray-200 pt-4">
+                  <PropertyImageSection propertyId={effectivePropertyId} />
+                </div>
+              )}
             </div>
 
             {/* Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
+              <Button type="button" variant="outline" onClick={handleClose}>
+                {createdPropertyId ? 'Cerrar' : 'Cancelar'}
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isEditing ? 'Actualizando...' : 'Creando...'}
-                  </>
-                ) : (
-                  <>{isEditing ? 'Actualizar' : 'Crear'}</>
-                )}
-              </Button>
+              {!createdPropertyId && (
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {isEditing ? 'Actualizando...' : 'Creando...'}
+                    </>
+                  ) : (
+                    <>{isEditing ? 'Actualizar' : 'Crear'}</>
+                  )}
+                </Button>
+              )}
             </div>
           </form>
         </div>

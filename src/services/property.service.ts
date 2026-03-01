@@ -1,6 +1,7 @@
 import axiosInstance from '../config/axios.config';
 import type {
   Property,
+  PropertyImage,
   CreatePropertyDto,
   UpdatePropertyDto,
   PropertyFilters,
@@ -83,23 +84,42 @@ export const propertyService = {
   },
 
   /**
-   * Upload de imagen
+   * Subir imagen a una propiedad
    */
-  uploadImage: async (file: File): Promise<string> => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+  uploadPropertyImage: async (
+    propertyId: string,
+    file: File,
+    onProgress?: (percent: number) => void,
+  ): Promise<PropertyImage> => {
+    const formData = new FormData();
+    formData.append('file', file);
 
-      const response = await axiosInstance.post('/api/v1/properties/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+    const response = await axiosInstance.post(
+      `/api/v1/properties/${propertyId}/images`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (e) => {
+          if (onProgress && e.total) {
+            onProgress(Math.round((e.loaded * 100) / e.total));
+          }
         },
-      });
+      },
+    );
+    return response.data;
+  },
 
-      return response.data.url || response.data.path;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
-    }
+  /**
+   * Eliminar imagen de una propiedad
+   */
+  deletePropertyImage: async (propertyId: string, imageId: string): Promise<void> => {
+    await axiosInstance.delete(`/api/v1/properties/${propertyId}/images/${imageId}`);
+  },
+
+  /**
+   * Marcar imagen como portada
+   */
+  setCoverImage: async (propertyId: string, imageId: string): Promise<void> => {
+    await axiosInstance.put(`/api/v1/properties/${propertyId}/images/${imageId}/cover`);
   },
 };
