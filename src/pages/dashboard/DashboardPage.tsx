@@ -4,7 +4,7 @@ import { Card, CardHeader, CardBody } from '../../components/ui';
 import { Building2, Users, Handshake, TrendingUp, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { dashboardService } from '../../services/dashboard.service';
 import { useAuth } from '../../context/AuthContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -38,11 +38,15 @@ export const DashboardPage: React.FC = () => {
   };
   const activities = dashboard?.recentActivities || [];
 
-  // Calcular cambios porcentuales (mock data para ahora)
-  const propertiesChange = 5.2;
-  const leadsChange = 12.3;
-  const dealsChange = 8.7;
-  const revenueChange = 15.5;
+  // Calcular porcentajes reales basados en datos del API
+  const calcPercent = (part: number, total: number): number | null => {
+    if (total <= 0) return null;
+    return Math.round((part / total) * 1000) / 10;
+  };
+
+  const leadsChange = calcPercent(stats.newLeadsThisMonth, stats.totalLeads);
+  const dealsChange = calcPercent(stats.dealsWonThisMonth, stats.totalDeals);
+  const revenueChange = calcPercent(stats.revenueThisMonth, stats.totalRevenue);
 
   // Formatear números
   const formatNumber = (num: number) => {
@@ -87,6 +91,23 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  // Componente para mostrar el cambio porcentual (o nada si no hay datos)
+  const PercentChange: React.FC<{ value: number | null; label?: string }> = ({ value, label = 'este mes' }) => {
+    if (value === null) return null;
+    return (
+      <div className="flex items-center mt-1">
+        {value >= 0 ? (
+          <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
+        ) : (
+          <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
+        )}
+        <p className={`text-sm ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {Math.abs(value)}% {label}
+        </p>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -123,16 +144,9 @@ export const DashboardPage: React.FC = () => {
               <p className="text-3xl font-bold text-gray-900 mt-2">
                 {formatNumber(stats.totalProperties)}
               </p>
-              <div className="flex items-center mt-1">
-                {propertiesChange >= 0 ? (
-                  <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
-                ) : (
-                  <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
-                )}
-                <p className={`text-sm ${propertiesChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(propertiesChange)}% este mes
-                </p>
-              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {formatNumber(stats.propertiesAvailable)} disponibles
+              </p>
             </div>
             <div className="p-3 bg-primary-50 rounded-lg">
               <Building2 className="w-8 h-8 text-primary-600" />
@@ -148,16 +162,7 @@ export const DashboardPage: React.FC = () => {
               <p className="text-3xl font-bold text-gray-900 mt-2">
                 {formatNumber(stats.totalLeads)}
               </p>
-              <div className="flex items-center mt-1">
-                {leadsChange >= 0 ? (
-                  <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
-                ) : (
-                  <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
-                )}
-                <p className={`text-sm ${leadsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(leadsChange)}% este mes
-                </p>
-              </div>
+              <PercentChange value={leadsChange} label="nuevos este mes" />
             </div>
             <div className="p-3 bg-blue-50 rounded-lg">
               <Users className="w-8 h-8 text-blue-600" />
@@ -173,16 +178,7 @@ export const DashboardPage: React.FC = () => {
               <p className="text-3xl font-bold text-gray-900 mt-2">
                 {formatNumber(stats.totalDeals)}
               </p>
-              <div className="flex items-center mt-1">
-                {dealsChange >= 0 ? (
-                  <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
-                ) : (
-                  <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
-                )}
-                <p className={`text-sm ${dealsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(dealsChange)}% este mes
-                </p>
-              </div>
+              <PercentChange value={dealsChange} label="cerrados este mes" />
             </div>
             <div className="p-3 bg-purple-50 rounded-lg">
               <Handshake className="w-8 h-8 text-purple-600" />
@@ -198,16 +194,7 @@ export const DashboardPage: React.FC = () => {
               <p className="text-3xl font-bold text-gray-900 mt-2">
                 {formatCurrency(stats.totalRevenue)}
               </p>
-              <div className="flex items-center mt-1">
-                {revenueChange >= 0 ? (
-                  <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
-                ) : (
-                  <ArrowDown className="w-4 h-4 text-red-600 mr-1" />
-                )}
-                <p className={`text-sm ${revenueChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(revenueChange)}% este mes
-                </p>
-              </div>
+              <PercentChange value={revenueChange} label="este mes" />
             </div>
             <div className="p-3 bg-green-50 rounded-lg">
               <TrendingUp className="w-8 h-8 text-green-600" />
@@ -245,38 +232,35 @@ export const DashboardPage: React.FC = () => {
           </CardBody>
         </Card>
 
-        {/* Distribución por Cambios */}
+        {/* Actividad del Mes - reemplaza el pie chart de datos mock */}
         <Card>
           <CardHeader>
             <h3 className="text-lg font-semibold text-gray-900">
-              Cambios del Mes (%)
+              Actividad del Mes
             </h3>
           </CardHeader>
           <CardBody>
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Propiedades', value: Math.abs(propertiesChange), color: '#1e40af' },
-                    { name: 'Leads', value: Math.abs(leadsChange), color: '#2563eb' },
-                    { name: 'Deals', value: Math.abs(dealsChange), color: '#7c3aed' },
-                    { name: 'Ingresos', value: Math.abs(revenueChange), color: '#16a34a' },
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  <Cell fill="#1e40af" />
-                  <Cell fill="#2563eb" />
-                  <Cell fill="#7c3aed" />
-                  <Cell fill="#16a34a" />
-                </Pie>
+              <BarChart
+                data={[
+                  { name: 'Leads Nuevos', value: stats.newLeadsThisMonth },
+                  { name: 'Leads Convertidos', value: stats.convertedLeadsThisMonth },
+                  { name: 'Deals Cerrados', value: stats.dealsWonThisMonth },
+                  { name: 'Propiedades Vendidas', value: stats.propertiesSold },
+                ]}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
                 <Tooltip />
-              </PieChart>
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  <Cell fill="#2563eb" />
+                  <Cell fill="#16a34a" />
+                  <Cell fill="#7c3aed" />
+                  <Cell fill="#ea580c" />
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </CardBody>
         </Card>
@@ -294,19 +278,35 @@ export const DashboardPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center py-2 border-b">
                 <span className="text-sm text-gray-600">Propiedades disponibles</span>
-                <span className="font-semibold text-gray-900">{stats.totalProperties}</span>
+                <span className="font-semibold text-gray-900">{formatNumber(stats.propertiesAvailable)}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-sm text-gray-600">Leads sin asignar</span>
-                <span className="font-semibold text-gray-900">-</span>
+                <span className="text-sm text-gray-600">Propiedades vendidas</span>
+                <span className="font-semibold text-gray-900">{formatNumber(stats.propertiesSold)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-sm text-gray-600">Leads nuevos este mes</span>
+                <span className="font-semibold text-gray-900">{formatNumber(stats.newLeadsThisMonth)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-sm text-gray-600">Leads convertidos este mes</span>
+                <span className="font-semibold text-gray-900">{formatNumber(stats.convertedLeadsThisMonth)}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b">
                 <span className="text-sm text-gray-600">Deals en negociación</span>
-                <span className="font-semibold text-gray-900">-</span>
+                <span className="font-semibold text-gray-900">{formatNumber(stats.dealsInProgress)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-sm text-gray-600">Deals cerrados este mes</span>
+                <span className="font-semibold text-gray-900">{formatNumber(stats.dealsWonThisMonth)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-sm text-gray-600">Ingresos del mes</span>
+                <span className="font-semibold text-gray-900">{formatCurrency(stats.revenueThisMonth)}</span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-gray-600">Contratos pendientes</span>
-                <span className="font-semibold text-gray-900">-</span>
+                <span className="text-sm text-gray-600">Comisiones pendientes</span>
+                <span className="font-semibold text-gray-900">{formatNumber(stats.commissionsPending)}</span>
               </div>
             </div>
           </CardBody>
