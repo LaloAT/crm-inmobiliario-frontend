@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardBody, Button } from '../../components/ui';
 import { Download, Loader2, TrendingUp, Users, Building2, Home } from 'lucide-react';
 import { reportService } from '../../services/report.service';
+import { developmentService } from '../../services/development.service';
 import {
   BarChart,
   Bar,
@@ -27,6 +28,7 @@ export const ReportsPage: React.FC = () => {
     new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
   );
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDevelopmentId, setSelectedDevelopmentId] = useState<string>('');
 
   // Fetch Sales Report
   const { data: salesData, isLoading: salesLoading } = useQuery({
@@ -49,11 +51,18 @@ export const ReportsPage: React.FC = () => {
     enabled: activeTab === 'inventory',
   });
 
-  // Fetch Development Report (using first development ID as placeholder)
+  // Fetch list of developments for the selector
+  const { data: developmentsData } = useQuery({
+    queryKey: ['developments-list'],
+    queryFn: () => developmentService.getAll({ pageSize: 100 }),
+    enabled: activeTab === 'development',
+  });
+
+  // Fetch Development Report
   const { data: developmentData, isLoading: developmentLoading } = useQuery({
-    queryKey: ['reports', 'development'],
-    queryFn: () => reportService.getDevelopmentReport('placeholder-id'),
-    enabled: false, // Disabled for now since we need a specific development ID
+    queryKey: ['reports', 'development', selectedDevelopmentId],
+    queryFn: () => reportService.getDevelopmentReport(selectedDevelopmentId),
+    enabled: activeTab === 'development' && !!selectedDevelopmentId,
   });
 
   const formatCurrency = (value: number) => {
@@ -87,8 +96,9 @@ export const ReportsPage: React.FC = () => {
           filename = `reporte-inventario-${new Date().toISOString().split('T')[0]}.xlsx`;
           break;
         case 'development':
-          blob = await reportService.exportDevelopmentReport('placeholder-id');
-          filename = `reporte-desarrollos-${new Date().toISOString().split('T')[0]}.xlsx`;
+          if (!selectedDevelopmentId) return;
+          blob = await reportService.exportDevelopmentReport(selectedDevelopmentId);
+          filename = `reporte-desarrollo-${selectedDevelopmentId}-${new Date().toISOString().split('T')[0]}.xlsx`;
           break;
         default:
           return;
@@ -487,7 +497,31 @@ export const ReportsPage: React.FC = () => {
 
       {activeTab === 'development' && (
         <div className="space-y-6">
-          {developmentLoading ? (
+          {/* Development Selector */}
+          <Card>
+            <CardBody>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Selecciona un Desarrollo
+              </label>
+              <select
+                value={selectedDevelopmentId}
+                onChange={(e) => setSelectedDevelopmentId(e.target.value)}
+                className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="">-- Seleccionar --</option>
+                {developmentsData?.items.map((dev) => (
+                  <option key={dev.id} value={dev.id}>{dev.name}</option>
+                ))}
+              </select>
+            </CardBody>
+          </Card>
+
+          {!selectedDevelopmentId ? (
+            <div className="text-center py-12">
+              <Home className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">Selecciona un desarrollo para ver su reporte</p>
+            </div>
+          ) : developmentLoading ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
             </div>
