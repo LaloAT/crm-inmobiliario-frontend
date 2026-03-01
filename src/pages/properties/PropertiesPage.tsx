@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardBody, Button } from '../../components/ui';
 import { Plus, Pencil, Trash2, Loader2, Search, Grid, List, Home, Bed, Bath, Car, MapPin } from 'lucide-react';
 import { propertyService } from '../../services/property.service';
+import { developmentService } from '../../services/development.service';
 import { PropertyModal } from './PropertyModal';
 import type { Property } from '../../types/property.types';
 import {
@@ -26,7 +27,14 @@ export const PropertiesPage: React.FC = () => {
     type?: PropertyType;
     operation?: OperationType;
     status?: PropertyStatus;
+    developmentId?: string;
   }>({});
+
+  // Fetch developments for filter dropdown
+  const { data: developmentsData } = useQuery({
+    queryKey: ['developments-list'],
+    queryFn: () => developmentService.getAll({ pageSize: 100 }),
+  });
 
   // Fetch properties
   const { data: propertiesData, isLoading } = useQuery({
@@ -39,6 +47,7 @@ export const PropertiesPage: React.FC = () => {
         type: filters.type,
         operation: filters.operation,
         status: filters.status,
+        developmentId: filters.developmentId,
       }),
   });
 
@@ -136,7 +145,7 @@ export const PropertiesPage: React.FC = () => {
       {/* Filters */}
       <Card>
         <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -194,6 +203,21 @@ export const PropertiesPage: React.FC = () => {
               <option value="">Todos los estados</option>
               {Object.entries(PropertyStatusLabels).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+
+            {/* Development */}
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              value={filters.developmentId || ''}
+              onChange={(e) => {
+                setFilters({ ...filters, developmentId: e.target.value || undefined });
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Todos los desarrollos</option>
+              {developmentsData?.items.map((dev) => (
+                <option key={dev.id} value={dev.id}>{dev.name}</option>
               ))}
             </select>
           </div>
@@ -264,13 +288,18 @@ export const PropertiesPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs bg-primary-100 text-primary-800 px-2 py-1 rounded">
                         {PropertyTypeLabels[property.type]}
                       </span>
                       <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
                         {OperationTypeLabels[property.operation]}
                       </span>
+                      {property.developmentName && (
+                        <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">
+                          {property.developmentName}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-gray-600">

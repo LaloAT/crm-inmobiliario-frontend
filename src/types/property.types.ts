@@ -89,6 +89,9 @@ export interface Property {
   videoUrl?: string;
   webContent?: string;
   amenities?: string;
+  // Development
+  developmentId?: string;
+  developmentName?: string;
   // Assignment
   assignedUserId?: string;
   assignedUser?: {
@@ -143,6 +146,8 @@ export interface CreatePropertyDto {
   videoUrl?: string;
   webContent?: string;
   amenities?: string;
+  // Development
+  developmentId?: string;
   // Assignment
   assignedUserId?: string;
 }
@@ -166,6 +171,7 @@ export interface PropertyFilters {
   city?: string;
   state?: string;
   search?: string;
+  developmentId?: string;
 }
 
 // ===========================

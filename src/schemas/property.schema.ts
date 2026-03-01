@@ -41,6 +41,8 @@ export const propertySchema = z.object({
   videoUrl: z.string().url().optional(),
   webContent: z.string().optional(),
   amenities: z.string().optional(),
+  // Development
+  developmentId: z.string().optional(),
   // Assignment
   assignedUserId: z.string().uuid().optional(),
 });

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Loader2 } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { propertySchema, type PropertyFormData } from '../../schemas/property.schema';
 import { propertyService } from '../../services/property.service';
+import { developmentService } from '../../services/development.service';
 import { useAuth } from '../../context/AuthContext';
 import type { Property } from '../../types/property.types';
 import { PropertyImageSection } from './PropertyImageSection';
@@ -32,6 +33,13 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
   const isEditing = !!property;
   const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
   const effectivePropertyId = property?.id ?? createdPropertyId;
+
+  // Fetch developments for the selector
+  const { data: developmentsData } = useQuery({
+    queryKey: ['developments-list'],
+    queryFn: () => developmentService.getAll({ pageSize: 100 }),
+    enabled: isOpen,
+  });
 
   const {
     register,
@@ -93,6 +101,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
         videoUrl: property.videoUrl || '',
         webContent: property.webContent || '',
         amenities: property.amenities || '',
+        // Development
+        developmentId: property.developmentId || '',
         // Assignment
         assignedUserId: property.assignedUserId,
       });
@@ -286,6 +296,22 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ isOpen, onClose, p
                       <p className="mt-1 text-sm text-red-600">{errors.publishStatus.message}</p>
                     )}
                   </div>
+                </div>
+
+                {/* Development */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Desarrollo
+                  </label>
+                  <select
+                    {...register('developmentId')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Sin desarrollo</option>
+                    {developmentsData?.items.map((dev) => (
+                      <option key={dev.id} value={dev.id}>{dev.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
