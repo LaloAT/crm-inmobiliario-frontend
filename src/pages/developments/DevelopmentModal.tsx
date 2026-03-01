@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Loader2 } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { developmentSchema, type DevelopmentFormData } from '../../schemas/development.schema';
@@ -9,6 +9,7 @@ import { developmentService } from '../../services/development.service';
 import { useAuth } from '../../context/AuthContext';
 import { DevelopmentStatus } from '../../types/development.types';
 import type { Development } from '../../types/development.types';
+import { builderService } from '../../services/builder.service';
 
 interface DevelopmentModalProps {
   isOpen: boolean;
@@ -24,6 +25,12 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isEditing = !!development;
+
+  const { data: buildersData } = useQuery({
+    queryKey: ['builders'],
+    queryFn: () => builderService.getAll({ pageSize: 100 }),
+    enabled: isOpen,
+  });
 
   const {
     register,
@@ -55,6 +62,7 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
         totalLots: development.totalLots,
         totalArea: development.totalArea,
         mapImageUrl: development.mapImageUrl || '',
+        builderId: development.builderId || '',
       });
     } else {
       reset({
@@ -71,6 +79,7 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
         totalLots: 0,
         totalArea: undefined,
         mapImageUrl: '',
+        builderId: '',
       });
     }
   }, [development, reset]);
@@ -238,6 +247,24 @@ export const DevelopmentModal: React.FC<DevelopmentModalProps> = ({
                   {...register('endDate')}
                   error={errors.endDate?.message}
                 />
+              </div>
+
+              {/* Builder */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Constructora
+                </label>
+                <select
+                  {...register('builderId')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">Sin constructora</option>
+                  {(buildersData?.items || []).map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Total Lots */}

@@ -34,6 +34,9 @@ export interface Development {
   availableLots?: number;
   reservedLots?: number;
   soldLots?: number;
+  // Builder
+  builderId?: string;
+  builderName?: string;
   // Metadata
   createdBy: string;
   createdAt: string;
@@ -55,6 +58,7 @@ export interface CreateDevelopmentDto {
   endDate?: string;
   status?: DevelopmentStatus;
   mapImageUrl?: string;
+  builderId?: string;
 }
 
 export interface UpdateDevelopmentDto extends Partial<CreateDevelopmentDto> {}
@@ -68,6 +72,7 @@ export interface DevelopmentFilters {
   pageSize?: number;
   status?: DevelopmentStatus;
   search?: string;
+  builderId?: string;
 }
 
 // ===========================

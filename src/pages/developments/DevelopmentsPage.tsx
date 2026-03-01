@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardBody, Button } from '../../components/ui';
-import { Plus, Pencil, Trash2, Loader2, Building, MapPin, Calendar, Layers } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Building, MapPin, Calendar, Layers, HardHat } from 'lucide-react';
 import { developmentService } from '../../services/development.service';
+import { builderService } from '../../services/builder.service';
 import { DevelopmentModal } from './DevelopmentModal';
 import { DevelopmentStatus } from '../../types/development.types';
 import type { Development } from '../../types/development.types';
@@ -14,15 +15,23 @@ export const DevelopmentsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<DevelopmentStatus | undefined>(undefined);
+  const [builderFilter, setBuilderFilter] = useState<string | undefined>(undefined);
+
+  // Fetch builders for filter
+  const { data: buildersData } = useQuery({
+    queryKey: ['builders'],
+    queryFn: () => builderService.getAll({ pageSize: 100 }),
+  });
 
   // Fetch developments
   const { data: developmentsData, isLoading } = useQuery({
-    queryKey: ['developments', currentPage, statusFilter],
+    queryKey: ['developments', currentPage, statusFilter, builderFilter],
     queryFn: () =>
       developmentService.getAll({
         pageNumber: currentPage,
         pageSize: 12,
         status: statusFilter,
+        builderId: builderFilter,
       }),
   });
 
@@ -126,6 +135,21 @@ export const DevelopmentsPage: React.FC = () => {
               <option value={DevelopmentStatus.Completado}>Completado</option>
               <option value={DevelopmentStatus.Cancelado}>Cancelado</option>
             </select>
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              value={builderFilter ?? ''}
+              onChange={(e) => {
+                setBuilderFilter(e.target.value || undefined);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Todas las constructoras</option>
+              {(buildersData?.items || []).map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
           </div>
         </CardBody>
       </Card>
@@ -165,6 +189,12 @@ export const DevelopmentsPage: React.FC = () => {
                           <MapPin className="w-4 h-4 mr-1" />
                           {development.location}
                         </div>
+                        {development.builderName && (
+                          <div className="flex items-center text-sm text-gray-500 mt-1">
+                            <HardHat className="w-4 h-4 mr-1" />
+                            {development.builderName}
+                          </div>
+                        )}
                       </div>
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(

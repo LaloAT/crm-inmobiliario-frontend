@@ -15,6 +15,7 @@ export const developmentSchema = z.object({
   totalLots: z.number().int().min(0),
   totalArea: z.number().min(0).optional(),
   mapImageUrl: z.string().optional(),
+  builderId: z.string().optional(),
 });
 
 export type DevelopmentFormData = z.infer<typeof developmentSchema>;
