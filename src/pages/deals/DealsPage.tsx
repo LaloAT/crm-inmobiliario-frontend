@@ -9,13 +9,14 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import type { DragStartEvent, DragOverEvent, DragEndEvent } from '@dnd-kit/core';
-import { Button } from '../../components/ui';
-import { Plus, Loader2 } from 'lucide-react';
+import { Card, CardBody, Button } from '../../components/ui';
+import { Plus, Loader2, Search } from 'lucide-react';
 import { dealService } from '../../services/deal.service';
 import { DealModal } from './DealModal';
 import { KanbanColumn } from './KanbanColumn';
 import { DealCard } from './DealCard';
 import type { Deal } from '../../types/deal.types';
+import { DealStage, DealStageLabels } from '../../types/deal.types';
 
 // Configuración de columnas del Kanban
 const STAGES = [
@@ -32,6 +33,8 @@ export const DealsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [stageFilter, setStageFilter] = useState<DealStage | undefined>(undefined);
 
   // Sensors for drag and drop
   const sensors = useSensors(
@@ -44,8 +47,12 @@ export const DealsPage: React.FC = () => {
 
   // Fetch deals
   const { data: dealsResponse, isLoading } = useQuery({
-    queryKey: ['deals'],
-    queryFn: () => dealService.getAll(),
+    queryKey: ['deals', searchTerm, stageFilter],
+    queryFn: () =>
+      dealService.getAll({
+        search: searchTerm || undefined,
+        stage: stageFilter,
+      }),
   });
 
   const deals = dealsResponse?.items || [];
@@ -207,6 +214,37 @@ export const DealsPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Filters */}
+      <Card>
+        <CardBody>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar deals..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Stage */}
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              value={stageFilter || ''}
+              onChange={(e) => setStageFilter(e.target.value ? Number(e.target.value) as DealStage : undefined)}
+            >
+              <option value="">Todas las etapas</option>
+              {Object.entries(DealStageLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+        </CardBody>
+      </Card>
 
       {/* Kanban Board */}
       {isLoading ? (

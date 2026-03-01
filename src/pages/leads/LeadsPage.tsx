@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Loader2, Search } from 'lucide-react';
 import { leadService } from '../../services/lead.service';
 import { LeadModal } from './LeadModal';
 import type { Lead } from '../../types/lead.types';
+import { LeadSource, LeadStatus, LeadSourceLabels, LeadStatusLabels } from '../../types/lead.types';
 
 export const LeadsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -13,15 +14,21 @@ export const LeadsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [filters, setFilters] = useState<{
+    source?: LeadSource;
+    status?: LeadStatus;
+  }>({});
 
   // Fetch leads
   const { data: leadsData, isLoading } = useQuery({
-    queryKey: ['leads', currentPage, searchTerm],
+    queryKey: ['leads', currentPage, searchTerm, filters],
     queryFn: () =>
       leadService.getAll({
         pageNumber: currentPage,
         pageSize: 10,
         search: searchTerm || undefined,
+        source: filters.source,
+        status: filters.status,
       }),
   });
 
@@ -116,21 +123,54 @@ export const LeadsPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Search */}
+      {/* Filters */}
       <Card>
         <CardBody>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre, email o teléfono..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              value={searchTerm}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre, email o teléfono..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
+            {/* Source */}
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              value={filters.source || ''}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
+                setFilters({ ...filters, source: e.target.value ? Number(e.target.value) as LeadSource : undefined });
                 setCurrentPage(1);
               }}
-            />
+            >
+              <option value="">Todas las fuentes</option>
+              {Object.entries(LeadSourceLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+
+            {/* Status */}
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              value={filters.status || ''}
+              onChange={(e) => {
+                setFilters({ ...filters, status: e.target.value ? Number(e.target.value) as LeadStatus : undefined });
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Todos los estados</option>
+              {Object.entries(LeadStatusLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
           </div>
         </CardBody>
       </Card>
