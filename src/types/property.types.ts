@@ -75,6 +75,7 @@ export interface Property {
   ownerPhone?: string;
   ownerEmail?: string;
   // Media
+  coverImageUrl?: string;
   images?: string[];
   virtualTourUrl?: string;
   videoUrl?: string;

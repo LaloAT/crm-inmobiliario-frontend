@@ -226,17 +226,20 @@ export const PropertiesPage: React.FC = () => {
               <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Image */}
                 <div className="relative h-48 bg-gray-200">
-                  {property.images && property.images.length > 0 ? (
-                    <img
-                      src={property.images[0]}
-                      alt={property.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <Home className="w-16 h-16 text-gray-400" />
-                    </div>
-                  )}
+                  {(() => {
+                    const imgSrc = property.coverImageUrl || property.images?.[0];
+                    return imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={property.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <Home className="w-16 h-16 text-gray-400" />
+                      </div>
+                    );
+                  })()}
                   <div className="absolute top-2 right-2">
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
@@ -359,17 +362,20 @@ export const PropertiesPage: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div className="h-10 w-10 flex-shrink-0 bg-gray-200 rounded">
-                              {property.images && property.images.length > 0 ? (
-                                <img
-                                  src={property.images[0]}
-                                  alt={property.title}
-                                  className="h-10 w-10 rounded object-cover"
-                                />
-                              ) : (
-                                <div className="flex items-center justify-center h-full">
-                                  <Home className="w-5 h-5 text-gray-400" />
-                                </div>
-                              )}
+                              {(() => {
+                                const imgSrc = property.coverImageUrl || property.images?.[0];
+                                return imgSrc ? (
+                                  <img
+                                    src={imgSrc}
+                                    alt={property.title}
+                                    className="h-10 w-10 rounded object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-center h-full">
+                                    <Home className="w-5 h-5 text-gray-400" />
+                                  </div>
+                                );
+                              })()}
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
