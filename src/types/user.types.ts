@@ -3,13 +3,13 @@
 // ===========================
 
 export enum UserRole {
-  SystemAdmin = 1,
-  OrganizationAdmin = 2,
-  Director = 3,
-  Manager = 4,
-  Supervisor = 5,
-  Agent = 6,
-  Assistant = 7,
+  SuperAdmin = 1,
+  ITAdmin = 2,
+  Manager = 3,
+  Supervisor = 4,
+  Agent = 5,
+  ExternalAgent = 6,
+  Auditor = 7,
 }
 
 export enum UserStatus {
@@ -111,23 +111,23 @@ export interface UserPaginatedResponse {
 // ===========================
 
 export const UserRoleLabels: Record<UserRole, string> = {
-  [UserRole.SystemAdmin]: 'Administrador del Sistema',
-  [UserRole.OrganizationAdmin]: 'Administrador de Organización',
-  [UserRole.Director]: 'Director',
+  [UserRole.SuperAdmin]: 'Administrador del Sistema',
+  [UserRole.ITAdmin]: 'Administrador de Organización',
   [UserRole.Manager]: 'Gerente',
   [UserRole.Supervisor]: 'Supervisor',
   [UserRole.Agent]: 'Agente',
-  [UserRole.Assistant]: 'Asistente',
+  [UserRole.ExternalAgent]: 'Agente Externo',
+  [UserRole.Auditor]: 'Auditor',
 };
 
 export const UserRoleShortLabels: Record<UserRole, string> = {
-  [UserRole.SystemAdmin]: 'Sys Admin',
-  [UserRole.OrganizationAdmin]: 'Org Admin',
-  [UserRole.Director]: 'Director',
+  [UserRole.SuperAdmin]: 'Sys Admin',
+  [UserRole.ITAdmin]: 'Org Admin',
   [UserRole.Manager]: 'Gerente',
   [UserRole.Supervisor]: 'Supervisor',
   [UserRole.Agent]: 'Agente',
-  [UserRole.Assistant]: 'Asistente',
+  [UserRole.ExternalAgent]: 'Agente Ext.',
+  [UserRole.Auditor]: 'Auditor',
 };
 
 export const UserStatusLabels: Record<UserStatus, string> = {

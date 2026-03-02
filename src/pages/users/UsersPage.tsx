@@ -54,13 +54,13 @@ export const UsersPage: React.FC = () => {
 
   const getRoleBadge = (role: UserRole) => {
     const roleColors: Record<UserRole, string> = {
-      [UserRole.SystemAdmin]: 'bg-red-100 text-red-800',
-      [UserRole.OrganizationAdmin]: 'bg-red-100 text-red-800',
-      [UserRole.Director]: 'bg-purple-100 text-purple-800',
+      [UserRole.SuperAdmin]: 'bg-red-100 text-red-800',
+      [UserRole.ITAdmin]: 'bg-orange-100 text-orange-800',
       [UserRole.Manager]: 'bg-purple-100 text-purple-800',
       [UserRole.Supervisor]: 'bg-blue-100 text-blue-800',
-      [UserRole.Agent]: 'bg-blue-100 text-blue-800',
-      [UserRole.Assistant]: 'bg-gray-100 text-gray-800',
+      [UserRole.Agent]: 'bg-green-100 text-green-800',
+      [UserRole.ExternalAgent]: 'bg-yellow-100 text-yellow-800',
+      [UserRole.Auditor]: 'bg-gray-100 text-gray-800',
     };
     return roleColors[role] || 'bg-gray-100 text-gray-800';
   };
