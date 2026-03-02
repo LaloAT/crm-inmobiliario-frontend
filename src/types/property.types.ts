@@ -172,6 +172,7 @@ export interface PropertyFilters {
   state?: string;
   search?: string;
   developmentId?: string;
+  builderId?: string;
 }
 
 // ===========================

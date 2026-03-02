@@ -4,6 +4,7 @@ import { Card, CardBody, Button } from '../../components/ui';
 import { Plus, Pencil, Trash2, Loader2, Search, Grid, List, Home, Bed, Bath, Car, MapPin } from 'lucide-react';
 import { propertyService } from '../../services/property.service';
 import { developmentService } from '../../services/development.service';
+import { builderService } from '../../services/builder.service';
 import { PropertyModal } from './PropertyModal';
 import type { Property } from '../../types/property.types';
 import {
@@ -28,12 +29,19 @@ export const PropertiesPage: React.FC = () => {
     operation?: OperationType;
     status?: PropertyStatus;
     developmentId?: string;
+    builderId?: string;
   }>({});
 
-  // Fetch developments for filter dropdown
+  // Fetch builders for filter dropdown
+  const { data: buildersData } = useQuery({
+    queryKey: ['builders'],
+    queryFn: () => builderService.getAll({ pageSize: 100 }),
+  });
+
+  // Fetch developments for filter dropdown (filtered by builder if selected)
   const { data: developmentsData } = useQuery({
-    queryKey: ['developments-list'],
-    queryFn: () => developmentService.getAll({ pageSize: 100 }),
+    queryKey: ['developments-list', filters.builderId],
+    queryFn: () => developmentService.getAll({ pageSize: 100, builderId: filters.builderId }),
   });
 
   // Fetch properties
@@ -48,6 +56,7 @@ export const PropertiesPage: React.FC = () => {
         operation: filters.operation,
         status: filters.status,
         developmentId: filters.developmentId,
+        builderId: filters.builderId,
       }),
   });
 
@@ -145,7 +154,7 @@ export const PropertiesPage: React.FC = () => {
       {/* Filters */}
       <Card>
         <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -206,6 +215,21 @@ export const PropertiesPage: React.FC = () => {
               ))}
             </select>
 
+            {/* Builder */}
+            <select
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              value={filters.builderId || ''}
+              onChange={(e) => {
+                setFilters({ ...filters, builderId: e.target.value || undefined, developmentId: undefined });
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Todas las constructoras</option>
+              {(buildersData?.items || []).map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+
             {/* Development */}
             <select
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -216,7 +240,7 @@ export const PropertiesPage: React.FC = () => {
               }}
             >
               <option value="">Todos los desarrollos</option>
-              {developmentsData?.items.map((dev) => (
+              {(developmentsData?.items || []).map((dev) => (
                 <option key={dev.id} value={dev.id}>{dev.name}</option>
               ))}
             </select>
