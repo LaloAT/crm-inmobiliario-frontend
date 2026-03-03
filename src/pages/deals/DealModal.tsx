@@ -114,7 +114,11 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: DealFormData) => dealService.update(deal!.id, { ...data, propertyId: data.propertyId || undefined }),
+    mutationFn: (data: DealFormData) => dealService.update(deal!.id, {
+      ...data,
+      propertyId: data.propertyId ?? undefined,
+      financingType: data.financingType ?? undefined,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       onClose();
@@ -125,8 +129,8 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
   const onSubmit = (data: DealFormData) => {
     const payload = {
       ...data,
-      propertyId: data.propertyId || undefined,
-      financingType: data.operation === DealOperation.Venta ? (data.financingType || undefined) : undefined,
+      propertyId: data.propertyId ?? undefined,
+      financingType: data.operation === DealOperation.Venta ? (data.financingType ?? undefined) : undefined,
       isThirdParty: data.isThirdParty || false,
     };
 
