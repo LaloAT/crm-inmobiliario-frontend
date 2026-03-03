@@ -73,4 +73,16 @@ export const dealDocumentService = {
       throw error;
     }
   },
+
+  getDownloadUrl: async (dealId: string, documentId: string): Promise<{ url: string }> => {
+    try {
+      const response = await axiosInstance.get(
+        `${BASE_URL}/${dealId}/documents/${documentId}/download-url`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error getting download URL:', error);
+      throw error;
+    }
+  },
 };

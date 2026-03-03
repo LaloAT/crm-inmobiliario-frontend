@@ -34,6 +34,7 @@ export const DealDocumentsTab: React.FC<DealDocumentsTabProps> = ({ dealId }) =>
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState('');
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
   const canVerify = user && (user as any).role <= UserRole.Supervisor;
 
@@ -115,6 +116,18 @@ export const DealDocumentsTab: React.FC<DealDocumentsTabProps> = ({ dealId }) =>
   const handleRejectConfirm = (documentId: string) => {
     if (!rejectNotes.trim()) return;
     rejectMutation.mutate({ documentId, notes: rejectNotes });
+  };
+
+  const handleView = async (documentId: string) => {
+    setViewingId(documentId);
+    try {
+      const { url } = await dealDocumentService.getDownloadUrl(dealId, documentId);
+      window.open(url, '_blank');
+    } catch {
+      // Error already logged in service
+    } finally {
+      setViewingId(null);
+    }
   };
 
   if (isLoading) {
@@ -203,6 +216,8 @@ export const DealDocumentsTab: React.FC<DealDocumentsTabProps> = ({ dealId }) =>
                   }}
                   onRejectNotesChange={setRejectNotes}
                   onRejectConfirm={() => handleRejectConfirm(doc.id)}
+                  onView={() => handleView(doc.id)}
+                  isViewing={viewingId === doc.id}
                   onNotApplicable={() => notApplicableMutation.mutate(doc.id)}
                   onDeleteFile={() => deleteFileMutation.mutate(doc.id)}
                   isVerifying={verifyMutation.isPending}
@@ -230,6 +245,8 @@ interface DocumentRowProps {
   fileInputRef: (el: HTMLInputElement | null) => void;
   onUploadClick: () => void;
   onFileChange: (file: File) => void;
+  onView: () => void;
+  isViewing: boolean;
   onVerify: () => void;
   onRejectStart: () => void;
   onRejectCancel: () => void;
@@ -250,6 +267,8 @@ const DocumentRow: React.FC<DocumentRowProps> = ({
   fileInputRef,
   onUploadClick,
   onFileChange,
+  onView,
+  isViewing,
   onVerify,
   onRejectStart,
   onRejectCancel,
@@ -341,15 +360,18 @@ const DocumentRow: React.FC<DocumentRowProps> = ({
           {/* Uploaded: View + Verify/Reject (supervisor+) */}
           {doc.status === DealDocumentStatus.Uploaded && !isUploading && (
             <>
-              <a
-                href={doc.fileUrl!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+              <button
+                onClick={onView}
+                disabled={isViewing}
+                className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
               >
-                <Eye className="w-3.5 h-3.5 inline mr-1" />
+                {isViewing ? (
+                  <Loader2 className="w-3.5 h-3.5 inline mr-1 animate-spin" />
+                ) : (
+                  <Eye className="w-3.5 h-3.5 inline mr-1" />
+                )}
                 Ver
-              </a>
+              </button>
               {canVerify && (
                 <>
                   <button
@@ -374,15 +396,18 @@ const DocumentRow: React.FC<DocumentRowProps> = ({
 
           {/* Verified: View */}
           {doc.status === DealDocumentStatus.Verified && (
-            <a
-              href={doc.fileUrl!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            <button
+              onClick={onView}
+              disabled={isViewing}
+              className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
             >
-              <Eye className="w-3.5 h-3.5 inline mr-1" />
+              {isViewing ? (
+                <Loader2 className="w-3.5 h-3.5 inline mr-1 animate-spin" />
+              ) : (
+                <Eye className="w-3.5 h-3.5 inline mr-1" />
+              )}
               Ver
-            </a>
+            </button>
           )}
 
           {/* Rejected: Re-upload */}
