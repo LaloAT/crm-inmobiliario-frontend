@@ -10,7 +10,7 @@ import { leadService } from '../../services/lead.service';
 import { propertyService } from '../../services/property.service';
 import type { Deal } from '../../types/deal.types';
 import { DealOperation } from '../../types/deal.types';
-import { useAuth } from '../../context/AuthContext';
+
 
 const FINANCING_OPTIONS = [
   { value: 1, label: 'Infonavit' },
@@ -28,7 +28,6 @@ interface DealModalProps {
 
 export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const isEditing = !!deal;
 
   const {
