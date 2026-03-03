@@ -81,7 +81,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
           ? new Date(deal.expectedCloseDate).toISOString().split('T')[0]
           : '',
         leadId: deal.leadId,
-        propertyId: deal.propertyId || null,
+        propertyId: deal.propertyId || undefined,
         assignedToId: deal.ownerId || null,
       });
     } else {
@@ -96,7 +96,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
         probability: 0,
         expectedCloseDate: '',
         leadId: '',
-        propertyId: null,
+        propertyId: undefined,
         assignedToId: null,
       });
     }
