@@ -10,7 +10,7 @@ export const dealSchema = z.object({
   probability: z.number().min(0).max(100),
   expectedCloseDate: z.string().optional(),
   leadId: z.string().uuid('Debe seleccionar un lead válido'),
-  propertyId: z.union([z.string().uuid(), z.literal('')]).optional().transform(val => val === '' ? undefined : val),
+  propertyId: z.union([z.string().uuid(), z.literal('')]).optional(),
   isThirdParty: z.boolean().optional(),
   assignedToId: z.string().uuid().optional().nullable(),
 });

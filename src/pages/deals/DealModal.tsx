@@ -81,7 +81,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
           ? new Date(deal.expectedCloseDate).toISOString().split('T')[0]
           : '',
         leadId: deal.leadId,
-        propertyId: deal.propertyId || undefined,
+        propertyId: deal.propertyId || '',
         assignedToId: deal.ownerId || null,
       });
     } else {
@@ -96,7 +96,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
         probability: 0,
         expectedCloseDate: '',
         leadId: '',
-        propertyId: undefined,
+        propertyId: '',
         assignedToId: null,
       });
     }
@@ -116,7 +116,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
   const updateMutation = useMutation({
     mutationFn: (data: DealFormData) => dealService.update(deal!.id, {
       ...data,
-      propertyId: data.propertyId ?? undefined,
+      propertyId: data.propertyId || undefined,
       financingType: data.financingType ?? undefined,
     }),
     onSuccess: () => {
@@ -129,7 +129,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
   const onSubmit = (data: DealFormData) => {
     const payload = {
       ...data,
-      propertyId: data.propertyId ?? undefined,
+      propertyId: data.propertyId || undefined,
       financingType: data.operation === DealOperation.Venta ? (data.financingType ?? undefined) : undefined,
       isThirdParty: data.isThirdParty || false,
     };
