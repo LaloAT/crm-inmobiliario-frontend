@@ -70,8 +70,8 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
     if (deal) {
       reset({
         title: deal.title,
-        description: deal.description || '',
-        value: deal.expectedAmount,
+        description: deal.notes || '',
+        value: deal.expectedValue,
         operation: deal.operation || DealOperation.Venta,
         financingType: deal.financingType ?? null,
         isThirdParty: deal.isThirdParty ?? false,
@@ -114,11 +114,8 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: DealFormData) => dealService.update(deal!.id, {
-      ...data,
-      propertyId: data.propertyId || undefined,
-      financingType: data.financingType ?? undefined,
-    }),
+    mutationFn: (updatePayload: ReturnType<typeof buildUpdatePayload>) =>
+      dealService.update(deal!.id, updatePayload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       onClose();
@@ -126,24 +123,28 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
     },
   });
 
-  const onSubmit = (data: DealFormData) => {
-    const payload = {
-      ...data,
-      propertyId: data.propertyId || undefined,
-      financingType: data.operation === DealOperation.Venta ? (data.financingType ?? undefined) : undefined,
-      isThirdParty: data.isThirdParty || false,
-    };
+  const buildUpdatePayload = (data: DealFormData) => ({
+    title: data.title,
+    expectedValue: data.value || 0,
+    propertyId: data.propertyId || undefined,
+    probability: data.probability || undefined,
+    expectedCloseDate: data.expectedCloseDate || undefined,
+    notes: data.description || undefined,
+  });
 
+  const onSubmit = (data: DealFormData) => {
     if (isEditing) {
-      updateMutation.mutate(payload);
+      updateMutation.mutate(buildUpdatePayload(data));
     } else {
-      const createData = {
-        ...payload,
-        organizationId: user?.organizationId || '',
-        ownerId: user?.id || '',
-        expectedAmount: data.value || 0,
-      };
-      createMutation.mutate(createData);
+      createMutation.mutate({
+        leadId: data.leadId,
+        operation: data.operation,
+        expectedValue: data.value || 0,
+        propertyId: data.propertyId || undefined,
+        probability: data.probability || undefined,
+        expectedCloseDate: data.expectedCloseDate || undefined,
+        notes: data.description || undefined,
+      });
     }
   };
 

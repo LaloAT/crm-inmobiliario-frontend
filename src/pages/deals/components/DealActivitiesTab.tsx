@@ -129,9 +129,9 @@ export const DealActivitiesTab: React.FC<DealActivitiesTabProps> = ({ dealId }) 
                   {activity.description && (
                     <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
                   )}
-                  {activity.createdByUser && (
+                  {activity.userName && (
                     <p className="text-xs text-gray-400 mt-1">
-                      Por {activity.createdByUser.fullName}
+                      Por {activity.userName}
                     </p>
                   )}
                 </div>

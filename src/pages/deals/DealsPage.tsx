@@ -96,13 +96,13 @@ export const DealsPage: React.FC = () => {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalValue = deals.reduce((sum, deal) => sum + deal.expectedAmount, 0);
+    const totalValue = deals.reduce((sum, deal) => sum + deal.expectedValue, 0);
     const wonValue = deals
       .filter((d) => d.stage === 5)
-      .reduce((sum, deal) => sum + deal.expectedAmount, 0);
+      .reduce((sum, deal) => sum + deal.expectedValue, 0);
     const expectedValue = deals
       .filter((d) => d.stage < 5)
-      .reduce((sum, deal) => sum + deal.expectedAmount * ((deal.probability || 0) / 100), 0);
+      .reduce((sum, deal) => sum + deal.expectedValue * ((deal.probability || 0) / 100), 0);
 
     return {
       total: deals.length,

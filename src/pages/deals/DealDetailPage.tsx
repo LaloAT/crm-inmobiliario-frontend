@@ -148,7 +148,7 @@ export const DealDetailPage: React.FC = () => {
                   <div>
                     <dt className="text-xs text-gray-500">Valor esperado</dt>
                     <dd className="text-sm font-medium text-gray-900">
-                      {formatCurrency(deal.expectedAmount)}
+                      {formatCurrency(deal.expectedValue)}
                     </dd>
                   </div>
                 </div>
@@ -170,10 +170,10 @@ export const DealDetailPage: React.FC = () => {
                     </dd>
                   </div>
                 </div>
-                {deal.description && (
+                {deal.notes && (
                   <div>
-                    <dt className="text-xs text-gray-500 mb-1">Descripción</dt>
-                    <dd className="text-sm text-gray-700">{deal.description}</dd>
+                    <dt className="text-xs text-gray-500 mb-1">Notas</dt>
+                    <dd className="text-sm text-gray-700">{deal.notes}</dd>
                   </div>
                 )}
                 <div className="flex items-center gap-3">
@@ -194,45 +194,40 @@ export const DealDetailPage: React.FC = () => {
             <CardBody>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Relaciones</h3>
               <dl className="space-y-4">
-                {deal.lead && (
+                {deal.leadName && (
                   <div className="flex items-center gap-3">
                     <Users className="w-5 h-5 text-gray-400" />
                     <div>
                       <dt className="text-xs text-gray-500">Lead vinculado</dt>
                       <dd className="text-sm font-medium text-gray-900">
-                        {deal.lead.firstName} {deal.lead.lastName}
+                        {deal.leadName}
                       </dd>
-                      <dd className="text-xs text-gray-500">{deal.lead.email}</dd>
                     </div>
                   </div>
                 )}
-                {deal.property && (
+                {deal.propertyTitle && (
                   <div className="flex items-center gap-3">
                     <Building2 className="w-5 h-5 text-gray-400" />
                     <div>
                       <dt className="text-xs text-gray-500">Propiedad vinculada</dt>
                       <dd className="text-sm font-medium text-gray-900">
-                        {deal.property.title}
-                      </dd>
-                      <dd className="text-xs text-gray-500">
-                        {formatCurrency(deal.property.price)}
+                        {deal.propertyTitle}
                       </dd>
                     </div>
                   </div>
                 )}
-                {deal.owner && (
+                {deal.ownerName && (
                   <div className="flex items-center gap-3">
                     <User className="w-5 h-5 text-gray-400" />
                     <div>
                       <dt className="text-xs text-gray-500">Responsable</dt>
                       <dd className="text-sm font-medium text-gray-900">
-                        {deal.owner.fullName}
+                        {deal.ownerName}
                       </dd>
-                      <dd className="text-xs text-gray-500">{deal.owner.email}</dd>
                     </div>
                   </div>
                 )}
-                {!deal.lead && !deal.property && !deal.owner && (
+                {!deal.leadName && !deal.propertyTitle && !deal.ownerName && (
                   <p className="text-sm text-gray-500">No hay relaciones registradas.</p>
                 )}
               </dl>

@@ -9,10 +9,10 @@ export const dealSchema = z.object({
   stage: z.number().int().min(1).max(6),
   probability: z.number().min(0).max(100),
   expectedCloseDate: z.string().optional(),
-  leadId: z.string().uuid('Debe seleccionar un lead válido'),
-  propertyId: z.union([z.string().uuid(), z.literal('')]).optional(),
+  leadId: z.string().min(1, 'Debe seleccionar un lead'),
+  propertyId: z.union([z.string().min(1), z.literal('')]).optional(),
   isThirdParty: z.boolean().optional(),
-  assignedToId: z.string().uuid().optional().nullable(),
+  assignedToId: z.union([z.string().min(1), z.literal('')]).optional().nullable(),
 });
 
 export type DealFormData = z.infer<typeof dealSchema>;

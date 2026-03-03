@@ -45,63 +45,62 @@ export enum ActivityType {
 export interface Deal {
   id: string;
   organizationId: string;
-  leadId?: string;
-  propertyId?: string;
-  ownerId: string;
   title: string;
-  description?: string;
+  leadId: string;
+  leadName?: string;
+  leadPhone?: string;
+  propertyId?: string;
+  propertyTitle?: string;
+  ownerId?: string;
+  ownerName?: string;
   operation: DealOperation;
-  financingType?: FinancingType;
-  isThirdParty?: boolean;
   stage: DealStage;
-  expectedAmount: number;
+  expectedValue: number;
   currency?: string;
   probability?: number;
   expectedCloseDate?: string;
-  actualCloseDate?: string;
-  wonNotes?: string;
-  lostReason?: string;
-  // Relations
-  lead?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  property?: {
-    id: string;
-    title: string;
-    price: number;
-  };
-  owner?: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
-  // Metadata
-  createdBy: string;
   createdAt: string;
-  updatedAt: string;
+  // DealDetailDto extra fields
+  previousStage?: DealStage;
+  stageChangedAt?: string;
+  finalValue?: number;
+  commissionPercentage?: number;
+  commissionAmount?: number;
+  actualCloseDate?: string;
+  visitDate?: string;
+  reservationDate?: string;
+  rentStartDate?: string;
+  rentEndDate?: string;
+  monthlyRent?: number;
+  rentDurationMonths?: number;
+  lostReason?: string;
+  wonNotes?: string;
+  notes?: string;
+  financingType?: FinancingType;
+  isThirdParty?: boolean;
+  updatedAt?: string;
+  activities?: DealActivity[];
 }
 
 export interface CreateDealDto {
-  organizationId: string;
-  leadId?: string;
-  propertyId?: string;
-  ownerId: string;
-  title: string;
-  description?: string;
+  leadId: string;
   operation: DealOperation;
-  financingType?: FinancingType;
-  isThirdParty?: boolean;
-  expectedAmount: number;
+  expectedValue: number;
+  propertyId?: string;
+  ownerId?: string;
   currency?: string;
   probability?: number;
   expectedCloseDate?: string;
+  notes?: string;
 }
 
-export interface UpdateDealDto extends Partial<CreateDealDto> {
-  stage?: DealStage;
+export interface UpdateDealDto {
+  title?: string;
+  propertyId?: string;
+  expectedValue?: number;
+  probability?: number;
+  expectedCloseDate?: string;
+  notes?: string;
 }
 
 export interface ChangeDealStageDto {
@@ -117,19 +116,15 @@ export interface ChangeDealStageDto {
 
 export interface DealActivity {
   id: string;
-  dealId: string;
+  dealId?: string;
+  userId?: string;
+  userName?: string;
   type: ActivityType;
   title: string;
   description?: string;
   scheduledAt?: string;
   completedAt?: string;
-  createdBy: string;
-  createdByUser?: {
-    id: string;
-    fullName: string;
-  };
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface CreateDealActivityDto {
