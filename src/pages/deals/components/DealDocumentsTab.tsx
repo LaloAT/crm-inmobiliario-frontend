@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Upload,
@@ -19,7 +19,7 @@ import {
   DealDocumentStatusColors,
   DocumentCategoryLabels,
 } from '../../../types/dealDocument.types';
-import type { DealDocument } from '../../../types/dealDocument.types';
+import type { DealDocument, DealDocumentsResponse } from '../../../types/dealDocument.types';
 import { useAuth } from '../../../context/AuthContext';
 import { UserRole } from '../../../types/user.types';
 
@@ -37,7 +37,7 @@ export const DealDocumentsTab: React.FC<DealDocumentsTabProps> = ({ dealId }) =>
 
   const canVerify = user && (user as any).role <= UserRole.Supervisor;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<DealDocumentsResponse>({
     queryKey: ['deal-documents', dealId],
     queryFn: () => dealDocumentService.getDocuments(dealId),
   });
@@ -91,26 +91,10 @@ export const DealDocumentsTab: React.FC<DealDocumentsTabProps> = ({ dealId }) =>
     },
   });
 
-  const documents = data?.documents || [];
-
-  const { completedCount, totalCount, progressPercent, groupedDocs } = useMemo(() => {
-    const completed = documents.filter(
-      (d) =>
-        d.status === DealDocumentStatus.Verified ||
-        d.status === DealDocumentStatus.NotApplicable
-    ).length;
-    const total = documents.length;
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    const grouped: Record<string, DealDocument[]> = {};
-    documents.forEach((doc) => {
-      const cat = doc.templateCategory || 'General';
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(doc);
-    });
-
-    return { completedCount: completed, totalCount: total, progressPercent: percent, groupedDocs: grouped };
-  }, [documents]);
+  const groups = data?.groups || [];
+  const total = data?.total || 0;
+  const completed = data?.completed || 0;
+  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const handleFileSelect = (documentId: string, file: File) => {
     setUploadingIds((prev) => new Set(prev).add(documentId));
@@ -141,7 +125,7 @@ export const DealDocumentsTab: React.FC<DealDocumentsTabProps> = ({ dealId }) =>
     );
   }
 
-  if (!documents.length) {
+  if (!groups.length) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <FolderOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -167,7 +151,7 @@ export const DealDocumentsTab: React.FC<DealDocumentsTabProps> = ({ dealId }) =>
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-700">Progreso documental</span>
           <span className="text-sm text-gray-500">
-            {completedCount} de {totalCount} completados ({progressPercent}%)
+            {completed} de {total} completados ({progressPercent}%)
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -179,22 +163,23 @@ export const DealDocumentsTab: React.FC<DealDocumentsTabProps> = ({ dealId }) =>
       </div>
 
       {/* Grouped documents */}
-      {Object.entries(groupedDocs).map(([category, docs]) => {
-        const catCompleted = docs.filter(
+      {groups.map((group) => {
+        const catCompleted = group.documents.filter(
           (d) =>
             d.status === DealDocumentStatus.Verified ||
             d.status === DealDocumentStatus.NotApplicable
         ).length;
+        const categoryLabel = DocumentCategoryLabels[group.categoryName] || group.categoryName;
 
         return (
-          <div key={category} className="bg-white rounded-lg border border-gray-200">
+          <div key={group.category} className="bg-white rounded-lg border border-gray-200">
             <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
               <h3 className="text-sm font-semibold text-gray-700">
-                {DocumentCategoryLabels[category] || category} ({catCompleted}/{docs.length})
+                {categoryLabel} ({catCompleted}/{group.documents.length})
               </h3>
             </div>
             <div className="divide-y divide-gray-100">
-              {docs.map((doc) => (
+              {group.documents.map((doc) => (
                 <DocumentRow
                   key={doc.id}
                   doc={doc}
@@ -357,7 +342,7 @@ const DocumentRow: React.FC<DocumentRowProps> = ({
           {doc.status === DealDocumentStatus.Uploaded && !isUploading && (
             <>
               <a
-                href={doc.fileUrl}
+                href={doc.fileUrl!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -390,7 +375,7 @@ const DocumentRow: React.FC<DocumentRowProps> = ({
           {/* Verified: View */}
           {doc.status === DealDocumentStatus.Verified && (
             <a
-              href={doc.fileUrl}
+              href={doc.fileUrl!}
               target="_blank"
               rel="noopener noreferrer"
               className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"

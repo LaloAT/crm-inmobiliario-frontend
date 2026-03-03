@@ -16,26 +16,36 @@ export enum DealDocumentStatus {
 
 export interface DealDocument {
   id: string;
-  dealId: string;
-  documentTemplateId: string;
   templateName: string;
-  templateCategory: string;
-  status: DealDocumentStatus;
-  fileUrl?: string;
-  fileName?: string;
-  fileSize?: number;
-  mimeType?: string;
-  notes?: string;
-  uploadedAt?: string;
-  verifiedAt?: string;
+  category: number;
+  categoryName: string;
   isRequired: boolean;
+  sortOrder: number;
+  status: DealDocumentStatus;
+  statusName: string;
+  fileUrl?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
+  mimeType?: string | null;
+  notes?: string | null;
+  uploadedAt?: string | null;
+  verifiedAt?: string | null;
+  rejectedAt?: string | null;
+}
+
+export interface DealDocumentGroup {
+  category: number;
+  categoryName: string;
+  documents: DealDocument[];
 }
 
 export interface DealDocumentsResponse {
-  documents: DealDocument[];
   total: number;
   completed: number;
   pending: number;
+  uploaded: number;
+  rejected: number;
+  groups: DealDocumentGroup[];
 }
 
 // ===========================
@@ -61,7 +71,7 @@ export const DealDocumentStatusColors: Record<DealDocumentStatus, string> = {
 export const DocumentCategoryLabels: Record<string, string> = {
   Buyer: 'Comprador',
   Seller: 'Vendedor',
-  Rental: 'Renta',
+  Rental: 'Arrendatario',
   Financing: 'Financiamiento',
   General: 'General',
 };
