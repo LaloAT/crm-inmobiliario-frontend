@@ -4,6 +4,7 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { LeadsPage } from '../pages/leads/LeadsPage';
 import { PropertiesPage } from '../pages/properties/PropertiesPage';
 import { DealsPage } from '../pages/deals/DealsPage';
+import { DealDetailPage } from '../pages/deals/DealDetailPage';
 import { ContractsPage } from '../pages/contracts/ContractsPage';
 import { DevelopmentsPage } from '../pages/developments/DevelopmentsPage';
 import { BuildersPage } from '../pages/builders/BuildersPage';
@@ -49,6 +50,10 @@ export const router = createBrowserRouter([
       {
         path: 'deals',
         element: <DealsPage />,
+      },
+      {
+        path: 'deals/:id',
+        element: <DealDetailPage />,
       },
       {
         path: 'contracts',

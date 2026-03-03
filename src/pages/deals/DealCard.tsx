@@ -1,7 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Pencil, Trash2, GripVertical, TrendingUp } from 'lucide-react';
+import { Pencil, Trash2, GripVertical, TrendingUp, Eye } from 'lucide-react';
 import type { Deal } from '../../types/deal.types';
 
 interface DealCardProps {
@@ -11,6 +12,7 @@ interface DealCardProps {
 }
 
 export const DealCard: React.FC<DealCardProps> = ({ deal, onEdit, onDelete }) => {
+  const navigate = useNavigate();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: deal.id,
   });
@@ -94,6 +96,16 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onEdit, onDelete }) =>
 
           {/* Actions */}
           <div className="flex gap-1 pt-2 border-t border-gray-100">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/deals/${deal.id}`);
+              }}
+              className="flex-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            >
+              <Eye className="w-3 h-3 inline mr-1" />
+              Ver
+            </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
