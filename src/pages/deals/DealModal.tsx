@@ -12,6 +12,14 @@ import type { Deal } from '../../types/deal.types';
 import { DealOperation } from '../../types/deal.types';
 import { useAuth } from '../../context/AuthContext';
 
+const FINANCING_OPTIONS = [
+  { value: 1, label: 'Infonavit' },
+  { value: 2, label: 'Cofinavit' },
+  { value: 3, label: 'Bancario' },
+  { value: 4, label: 'Contado' },
+  { value: 5, label: 'Otro' },
+];
+
 interface DealModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,14 +35,20 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<DealFormData>({
     resolver: zodResolver(dealSchema),
     defaultValues: {
       stage: 1,
       probability: 0,
+      operation: DealOperation.Venta,
+      financingType: null,
+      isThirdParty: false,
     },
   });
+
+  const operationValue = watch('operation');
 
   // Fetch leads for dropdown
   const { data: leadsData } = useQuery({
@@ -58,6 +72,9 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
         title: deal.title,
         description: deal.description || '',
         value: deal.expectedAmount,
+        operation: deal.operation || DealOperation.Venta,
+        financingType: deal.financingType ?? null,
+        isThirdParty: deal.isThirdParty ?? false,
         stage: deal.stage,
         probability: deal.probability || 0,
         expectedCloseDate: deal.expectedCloseDate
@@ -72,6 +89,9 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
         title: '',
         description: '',
         value: 0,
+        operation: DealOperation.Venta,
+        financingType: null,
+        isThirdParty: false,
         stage: 1,
         probability: 0,
         expectedCloseDate: '',
@@ -103,15 +123,20 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
   });
 
   const onSubmit = (data: DealFormData) => {
+    const payload = {
+      ...data,
+      propertyId: data.propertyId || undefined,
+      financingType: data.operation === DealOperation.Venta ? (data.financingType || undefined) : undefined,
+      isThirdParty: data.isThirdParty || false,
+    };
+
     if (isEditing) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(payload);
     } else {
       const createData = {
-        ...data,
-        propertyId: data.propertyId || undefined,
+        ...payload,
         organizationId: user?.organizationId || '',
         ownerId: user?.id || '',
-        operation: DealOperation.Venta,
         expectedAmount: data.value || 0,
       };
       createMutation.mutate(createData);
@@ -224,6 +249,44 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
                 />
               </div>
 
+              {/* Operación y Financiamiento */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Operación <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    {...register('operation', { valueAsNumber: true })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value={1}>Venta</option>
+                    <option value={2}>Renta</option>
+                  </select>
+                  {errors.operation && (
+                    <p className="mt-1 text-sm text-red-600">{errors.operation.message}</p>
+                  )}
+                </div>
+
+                {Number(operationValue) === DealOperation.Venta && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo de Financiamiento
+                    </label>
+                    <select
+                      {...register('financingType', { setValueAs: (v) => v === '' ? null : Number(v) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="">Sin especificar</option>
+                      {FINANCING_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               {/* Lead */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -264,6 +327,19 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
                 {errors.propertyId && (
                   <p className="mt-1 text-sm text-red-600">{errors.propertyId.message}</p>
                 )}
+              </div>
+
+              {/* Is Third Party */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isThirdParty"
+                  {...register('isThirdParty')}
+                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                />
+                <label htmlFor="isThirdParty" className="text-sm text-gray-700">
+                  La propiedad es de un tercero (no de constructora)
+                </label>
               </div>
             </div>
 

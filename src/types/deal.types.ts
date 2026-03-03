@@ -17,6 +17,14 @@ export enum DealOperation {
   VentaRenta = 3,
 }
 
+export enum FinancingType {
+  Infonavit = 1,
+  Cofinavit = 2,
+  Bancario = 3,
+  Contado = 4,
+  Otro = 5,
+}
+
 export enum ActivityType {
   Llamada = 1,
   Email = 2,
@@ -43,6 +51,8 @@ export interface Deal {
   title: string;
   description?: string;
   operation: DealOperation;
+  financingType?: FinancingType;
+  isThirdParty?: boolean;
   stage: DealStage;
   expectedAmount: number;
   currency?: string;
@@ -82,6 +92,8 @@ export interface CreateDealDto {
   title: string;
   description?: string;
   operation: DealOperation;
+  financingType?: FinancingType;
+  isThirdParty?: boolean;
   expectedAmount: number;
   currency?: string;
   probability?: number;
@@ -171,6 +183,14 @@ export const DealOperationLabels: Record<DealOperation, string> = {
   [DealOperation.Venta]: 'Venta',
   [DealOperation.Renta]: 'Renta',
   [DealOperation.VentaRenta]: 'Venta/Renta',
+};
+
+export const FinancingTypeLabels: Record<FinancingType, string> = {
+  [FinancingType.Infonavit]: 'Infonavit',
+  [FinancingType.Cofinavit]: 'Cofinavit',
+  [FinancingType.Bancario]: 'Bancario',
+  [FinancingType.Contado]: 'Contado',
+  [FinancingType.Otro]: 'Otro',
 };
 
 export const ActivityTypeLabels: Record<ActivityType, string> = {
