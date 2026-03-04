@@ -6,6 +6,7 @@ import { PropertiesPage } from '../pages/properties/PropertiesPage';
 import { DealsPage } from '../pages/deals/DealsPage';
 import { DealDetailPage } from '../pages/deals/DealDetailPage';
 import { ContractsPage } from '../pages/contracts/ContractsPage';
+import { LettersOfInterestPage } from '../pages/lettersOfInterest/LettersOfInterestPage';
 import { DevelopmentsPage } from '../pages/developments/DevelopmentsPage';
 import { BuildersPage } from '../pages/builders/BuildersPage';
 import { LotsPage } from '../pages/lots/LotsPage';
@@ -58,6 +59,10 @@ export const router = createBrowserRouter([
       {
         path: 'contracts',
         element: <ContractsPage />,
+      },
+      {
+        path: 'letters-of-interest',
+        element: <LettersOfInterestPage />,
       },
       {
         path: 'developments',
