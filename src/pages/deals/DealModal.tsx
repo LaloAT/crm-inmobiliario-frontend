@@ -8,6 +8,7 @@ import { dealSchema, type DealFormData } from '../../schemas/deal.schema';
 import { dealService } from '../../services/deal.service';
 import { leadService } from '../../services/lead.service';
 import { propertyService } from '../../services/property.service';
+import { developmentService } from '../../services/development.service';
 import type { Deal } from '../../types/deal.types';
 import { DealOperation } from '../../types/deal.types';
 
@@ -63,8 +64,15 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
     queryFn: () => propertyService.getAll({ pageSize: 100 }),
   });
 
+  // Fetch developments for builder lookup
+  const { data: developmentsData } = useQuery({
+    queryKey: ['developments'],
+    queryFn: () => developmentService.getAll({ pageSize: 100 }),
+  });
+
   const leads = leadsData?.items || [];
   const properties = propertiesData?.items || [];
+  const developments = developmentsData?.items || [];
 
   // Auto-fill price and operation when a property is selected
   useEffect(() => {
@@ -75,8 +83,17 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
     setValue('value', property.price);
     const op = property.operation === 2 ? DealOperation.Renta : DealOperation.Venta;
     setValue('operation', op);
-    setValue('isThirdParty', !property.developmentId);
-  }, [selectedPropertyId, properties, setValue]);
+
+    // Lookup builder via development: "Independiente" → third party
+    let thirdParty = true;
+    if (property.developmentId) {
+      const dev = developments.find((d) => d.id === property.developmentId);
+      if (dev?.builderName && dev.builderName.toLowerCase() !== 'independiente') {
+        thirdParty = false;
+      }
+    }
+    setValue('isThirdParty', thirdParty);
+  }, [selectedPropertyId, properties, developments, setValue]);
 
   // Reset form when deal changes
   useEffect(() => {
