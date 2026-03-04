@@ -129,6 +129,8 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
     probability: data.probability || undefined,
     expectedCloseDate: data.expectedCloseDate || undefined,
     notes: data.description || undefined,
+    financingType: data.financingType ?? undefined,
+    isThirdParty: data.isThirdParty,
   });
 
   const onSubmit = (data: DealFormData) => {
@@ -143,6 +145,8 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
         probability: data.probability || undefined,
         expectedCloseDate: data.expectedCloseDate || undefined,
         notes: data.description || undefined,
+        financingType: data.financingType ?? undefined,
+        isThirdParty: data.isThirdParty,
       });
     }
   };

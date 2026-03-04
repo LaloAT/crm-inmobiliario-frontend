@@ -92,6 +92,8 @@ export interface CreateDealDto {
   probability?: number;
   expectedCloseDate?: string;
   notes?: string;
+  financingType?: FinancingType;
+  isThirdParty?: boolean;
 }
 
 export interface UpdateDealDto {
@@ -101,6 +103,8 @@ export interface UpdateDealDto {
   probability?: number;
   expectedCloseDate?: string;
   notes?: string;
+  financingType?: FinancingType | null;
+  isThirdParty?: boolean;
 }
 
 export interface ChangeDealStageDto {
