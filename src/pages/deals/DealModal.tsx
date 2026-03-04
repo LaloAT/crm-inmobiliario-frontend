@@ -35,6 +35,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<DealFormData>({
     resolver: zodResolver(dealSchema),
@@ -48,6 +49,7 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
   });
 
   const operationValue = watch('operation');
+  const selectedPropertyId = watch('propertyId');
 
   // Fetch leads for dropdown
   const { data: leadsData } = useQuery({
@@ -63,6 +65,18 @@ export const DealModal: React.FC<DealModalProps> = ({ isOpen, onClose, deal }) =
 
   const leads = leadsData?.items || [];
   const properties = propertiesData?.items || [];
+
+  // Auto-fill price and operation when a property is selected
+  useEffect(() => {
+    if (!selectedPropertyId) return;
+    const property = properties.find((p) => p.id === selectedPropertyId);
+    if (!property) return;
+
+    setValue('value', property.price);
+    const op = property.operation === 2 ? DealOperation.Renta : DealOperation.Venta;
+    setValue('operation', op);
+    setValue('isThirdParty', !property.developmentId);
+  }, [selectedPropertyId, properties, setValue]);
 
   // Reset form when deal changes
   useEffect(() => {
