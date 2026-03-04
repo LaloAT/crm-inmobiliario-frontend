@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardBody, Button } from '../../components/ui';
-import { Plus, Pencil, Send, CheckCircle, XCircle, ArrowRightCircle, Eye, Loader2, Search } from 'lucide-react';
+import { Plus, Loader2, Search } from 'lucide-react';
 import { letterOfInterestService } from '../../services/letterOfInterest.service';
 import { LetterOfInterestModal } from './LetterOfInterestModal';
 import type { LetterOfInterestDto } from '../../types/letterOfInterest.types';
@@ -19,6 +19,7 @@ export const LettersOfInterestPage: React.FC = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<LetterOfInterestDto | null>(null);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<{
@@ -66,17 +67,50 @@ export const LettersOfInterestPage: React.FC = () => {
   // Handlers
   const handleCreate = () => {
     setSelectedLetter(null);
+    setIsViewMode(false);
     setIsModalOpen(true);
   };
 
   const handleEdit = (letter: LetterOfInterestDto) => {
     setSelectedLetter(letter);
+    setIsViewMode(false);
     setIsModalOpen(true);
+  };
+
+  const handleView = (letter: LetterOfInterestDto) => {
+    setSelectedLetter(letter);
+    setIsViewMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleSend = (id: string) => {
+    if (window.confirm('¿Enviar esta carta de interés? Ya no podrá ser editada.')) {
+      sendMutation.mutate(id);
+    }
+  };
+
+  const handleSign = (id: string) => {
+    if (window.confirm('¿Marcar como firmada esta carta de interés?')) {
+      signMutation.mutate(id);
+    }
+  };
+
+  const handleCancel = (id: string) => {
+    if (window.confirm('¿Cancelar esta carta de interés? Esta acción no se puede deshacer.')) {
+      cancelMutation.mutate(id);
+    }
+  };
+
+  const handleConvert = (id: string) => {
+    if (window.confirm('¿Convertir esta carta en un Deal/Oportunidad?')) {
+      convertMutation.mutate(id);
+    }
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedLetter(null);
+    setIsViewMode(false);
   };
 
   const formatCurrency = (value?: number) => {
@@ -252,72 +286,73 @@ export const LettersOfInterestPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
-                          {/* Draft actions: Edit, Send, Cancel */}
+                        <div className="flex justify-end gap-1.5 flex-wrap">
+                          {/* Ver - always available */}
+                          <button
+                            onClick={() => handleView(letter)}
+                            className="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          >
+                            Ver
+                          </button>
+
+                          {/* Draft actions */}
                           {letter.status === LetterOfInterestStatus.Draft && (
                             <>
                               <button
                                 onClick={() => handleEdit(letter)}
-                                className="text-primary-600 hover:text-primary-900"
-                                title="Editar"
+                                className="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
                               >
-                                <Pencil className="w-4 h-4" />
+                                Editar
                               </button>
                               <button
-                                onClick={() => sendMutation.mutate(letter.id)}
-                                className="text-blue-600 hover:text-blue-900"
-                                title="Enviar"
+                                onClick={() => handleSend(letter.id)}
+                                className="px-3 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
                               >
-                                <Send className="w-4 h-4" />
+                                Enviar
                               </button>
                               <button
-                                onClick={() => cancelMutation.mutate(letter.id)}
-                                className="text-red-600 hover:text-red-900"
-                                title="Cancelar"
+                                onClick={() => handleCancel(letter.id)}
+                                className="px-3 py-1 text-sm rounded-md border border-red-300 text-red-600 hover:bg-red-50"
                               >
-                                <XCircle className="w-4 h-4" />
+                                Cancelar
                               </button>
                             </>
                           )}
 
-                          {/* Sent actions: Sign, Cancel */}
+                          {/* Sent actions */}
                           {letter.status === LetterOfInterestStatus.Sent && (
                             <>
                               <button
-                                onClick={() => signMutation.mutate(letter.id)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Firmar"
+                                onClick={() => handleSign(letter.id)}
+                                className="px-3 py-1 text-sm rounded-md bg-green-600 text-white hover:bg-green-700"
                               >
-                                <CheckCircle className="w-4 h-4" />
+                                Firmar
                               </button>
                               <button
-                                onClick={() => cancelMutation.mutate(letter.id)}
-                                className="text-red-600 hover:text-red-900"
-                                title="Cancelar"
+                                onClick={() => handleCancel(letter.id)}
+                                className="px-3 py-1 text-sm rounded-md border border-red-300 text-red-600 hover:bg-red-50"
                               >
-                                <XCircle className="w-4 h-4" />
+                                Cancelar
                               </button>
                             </>
                           )}
 
-                          {/* Signed actions: Convert to Deal or View Deal */}
+                          {/* Signed actions */}
                           {letter.status === LetterOfInterestStatus.Signed && (
                             <>
                               {letter.dealId ? (
                                 <button
                                   onClick={() => navigate(`/deals/${letter.dealId}`)}
-                                  className="text-primary-600 hover:text-primary-900"
-                                  title="Ver Deal"
+                                  className="px-3 py-1 text-sm rounded-md bg-green-600 text-white hover:bg-green-700"
                                 >
-                                  <Eye className="w-4 h-4" />
+                                  Ver Deal
                                 </button>
                               ) : (
                                 <button
-                                  onClick={() => convertMutation.mutate(letter.id)}
-                                  className="text-green-600 hover:text-green-900"
-                                  title="Convertir a Deal"
+                                  onClick={() => handleConvert(letter.id)}
+                                  className="px-3 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
                                 >
-                                  <ArrowRightCircle className="w-4 h-4" />
+                                  Convertir a Deal
                                 </button>
                               )}
                             </>
@@ -363,6 +398,7 @@ export const LettersOfInterestPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         letter={selectedLetter}
+        readOnly={isViewMode}
       />
     </div>
   );

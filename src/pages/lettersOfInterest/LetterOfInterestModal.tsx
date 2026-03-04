@@ -15,12 +15,13 @@ interface LetterOfInterestModalProps {
   isOpen: boolean;
   onClose: () => void;
   letter: LetterOfInterestDto | null;
+  readOnly?: boolean;
 }
 
-export const LetterOfInterestModal: React.FC<LetterOfInterestModalProps> = ({ isOpen, onClose, letter }) => {
+export const LetterOfInterestModal: React.FC<LetterOfInterestModalProps> = ({ isOpen, onClose, letter, readOnly = false }) => {
   const queryClient = useQueryClient();
   const isEditing = !!letter;
-  const isReadOnly = isEditing && letter.status !== LetterOfInterestStatus.Draft;
+  const isReadOnly = readOnly || (isEditing && letter.status !== LetterOfInterestStatus.Draft);
 
   const {
     register,
@@ -185,7 +186,7 @@ export const LetterOfInterestModal: React.FC<LetterOfInterestModalProps> = ({ is
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">
-              {isEditing ? 'Editar Carta de Interés' : 'Nueva Carta de Interés'}
+              {readOnly ? 'Detalle de Carta de Interés' : isEditing ? 'Editar Carta de Interés' : 'Nueva Carta de Interés'}
             </h3>
             <button
               onClick={onClose}
