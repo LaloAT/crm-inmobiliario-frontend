@@ -91,4 +91,23 @@ export const letterOfInterestService = {
       throw error;
     }
   },
+
+  downloadPdf: async (id: string, fileName?: string): Promise<void> => {
+    try {
+      const response = await axiosInstance.get(`/api/v1/letters-of-interest/${id}/pdf`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName || `carta-de-interes-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading letter PDF:', error);
+      throw error;
+    }
+  },
 };

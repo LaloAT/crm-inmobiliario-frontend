@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardBody, Button } from '../../components/ui';
-import { Plus, Loader2, Search } from 'lucide-react';
+import { Plus, Loader2, Search, Download } from 'lucide-react';
 import { letterOfInterestService } from '../../services/letterOfInterest.service';
 import { LetterOfInterestModal } from './LetterOfInterestModal';
 import type { LetterOfInterestDto } from '../../types/letterOfInterest.types';
@@ -22,6 +22,7 @@ export const LettersOfInterestPage: React.FC = () => {
   const [isViewMode, setIsViewMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [filters, setFilters] = useState<{
     status?: LetterOfInterestStatus;
     type?: LetterOfInterestType;
@@ -104,6 +105,17 @@ export const LettersOfInterestPage: React.FC = () => {
   const handleConvert = (id: string) => {
     if (window.confirm('¿Convertir esta carta en un Deal/Oportunidad?')) {
       convertMutation.mutate(id);
+    }
+  };
+
+  const handleDownloadPdf = async (letter: LetterOfInterestDto) => {
+    setDownloadingId(letter.id);
+    try {
+      await letterOfInterestService.downloadPdf(letter.id, `carta-${letter.prospectName}.pdf`);
+    } catch {
+      // error already logged in service
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -293,6 +305,20 @@ export const LettersOfInterestPage: React.FC = () => {
                             className="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
                           >
                             Ver
+                          </button>
+
+                          {/* PDF - always available */}
+                          <button
+                            onClick={() => handleDownloadPdf(letter)}
+                            disabled={downloadingId === letter.id}
+                            className="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 inline-flex items-center gap-1"
+                          >
+                            {downloadingId === letter.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" />
+                            )}
+                            PDF
                           </button>
 
                           {/* Draft actions */}
