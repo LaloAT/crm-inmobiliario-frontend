@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Loader2 } from 'lucide-react';
@@ -7,16 +7,16 @@ import { Button, Input } from '../../components/ui';
 import { lotSchema, type LotFormData } from '../../schemas/lot.schema';
 import { lotService } from '../../services/lot.service';
 import { developmentService } from '../../services/development.service';
-import type { Lot, Development } from '../../types';
-import { LotStatus, LotStatusLabels } from '../../types/lot.types';
+import type { Lot } from '../../types/lot.types';
 
 interface LotModalProps {
   isOpen: boolean;
   onClose: () => void;
   lot: Lot | null;
+  readOnly?: boolean;
 }
 
-export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
+export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot, readOnly = false }) => {
   const queryClient = useQueryClient();
   const isEditing = !!lot;
 
@@ -28,11 +28,23 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
   } = useForm<LotFormData>({
     resolver: zodResolver(lotSchema),
     defaultValues: {
-      status: LotStatus.Disponible,
+      developmentId: '',
+      lotNumber: '',
+      block: '',
+      street: '',
+      phase: '',
+      model: '',
+      lotSize: null,
+      builtSize: null,
+      bedrooms: null,
+      bathrooms: null,
+      parkingSpaces: null,
+      floors: null,
+      price: 0,
+      notes: '',
     },
   });
 
-  // Fetch developments for dropdown
   const { data: developmentsData } = useQuery({
     queryKey: ['developments'],
     queryFn: () => developmentService.getAll({ pageNumber: 1, pageSize: 100 }),
@@ -40,65 +52,98 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
 
   const developments = developmentsData?.items || [];
 
-  // Reset form when lot changes
   useEffect(() => {
     if (lot) {
       reset({
+        developmentId: lot.developmentId,
         lotNumber: lot.lotNumber,
         block: lot.block || '',
-        manzana: lot.manzana || '',
-        area: lot.area,
-        frontMeters: lot.frontMeters,
-        depthMeters: lot.depthMeters,
+        street: lot.street || '',
+        phase: lot.phase || '',
+        model: lot.model || '',
+        lotSize: lot.lotSize ?? null,
+        builtSize: lot.builtSize ?? null,
+        bedrooms: lot.bedrooms ?? null,
+        bathrooms: lot.bathrooms ?? null,
+        parkingSpaces: lot.parkingSpaces ?? null,
+        floors: lot.floors ?? null,
         price: lot.price,
-        currency: lot.currency || 'MXN',
-        status: lot.status,
-        positionX: lot.positionX,
-        positionY: lot.positionY,
-        developmentId: lot.developmentId,
-        assignedUserId: lot.assignedUserId,
         notes: lot.notes || '',
       });
     } else {
       reset({
+        developmentId: '',
         lotNumber: '',
         block: '',
-        manzana: '',
-        area: 0,
+        street: '',
+        phase: '',
+        model: '',
+        lotSize: null,
+        builtSize: null,
+        bedrooms: null,
+        bathrooms: null,
+        parkingSpaces: null,
+        floors: null,
         price: 0,
-        currency: 'MXN',
-        status: LotStatus.Disponible,
-        developmentId: '',
         notes: '',
       });
     }
   }, [lot, reset]);
 
-  // Create mutation
   const createMutation = useMutation({
     mutationFn: lotService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lots'] });
+      queryClient.invalidateQueries({ queryKey: ['lotsSummary'] });
       onClose();
       reset();
     },
   });
 
-  // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: LotFormData) => lotService.update(lot!.id, data),
+    mutationFn: (data: LotFormData) =>
+      lotService.update(lot!.id, {
+        lotNumber: data.lotNumber,
+        block: data.block || undefined,
+        street: data.street || undefined,
+        phase: data.phase || undefined,
+        model: data.model || undefined,
+        lotSize: data.lotSize ?? undefined,
+        builtSize: data.builtSize ?? undefined,
+        bedrooms: data.bedrooms ?? undefined,
+        bathrooms: data.bathrooms ?? undefined,
+        parkingSpaces: data.parkingSpaces ?? undefined,
+        floors: data.floors ?? undefined,
+        price: data.price,
+        notes: data.notes || undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lots'] });
+      queryClient.invalidateQueries({ queryKey: ['lotsSummary'] });
       onClose();
       reset();
     },
   });
 
-  const onSubmit: SubmitHandler<LotFormData> = (data) => {
+  const onSubmit = (data: LotFormData) => {
     if (isEditing) {
       updateMutation.mutate(data);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate({
+        developmentId: data.developmentId,
+        lotNumber: data.lotNumber,
+        block: data.block || undefined,
+        phase: data.phase || undefined,
+        model: data.model || undefined,
+        lotSize: data.lotSize ?? undefined,
+        builtSize: data.builtSize ?? undefined,
+        bedrooms: data.bedrooms ?? undefined,
+        bathrooms: data.bathrooms ?? undefined,
+        parkingSpaces: data.parkingSpaces ?? undefined,
+        floors: data.floors ?? undefined,
+        price: data.price,
+        notes: data.notes || undefined,
+      });
     }
   };
 
@@ -109,44 +154,32 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        {/* Background overlay */}
-        <div
-          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-          onClick={onClose}
-        />
-
-        {/* Modal panel */}
+        <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={onClose} />
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-          {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">
-              {isEditing ? 'Editar Lote' : 'Crear Lote'}
+              {readOnly ? 'Detalle de Lote' : isEditing ? 'Editar Lote' : 'Crear Lote'}
             </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-500"
-            >
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="px-6 py-4 space-y-4">
-              {/* Development */}
+            <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* Desarrollo */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Desarrollo <span className="text-red-500">*</span>
                 </label>
                 <select
                   {...register('developmentId')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  disabled={readOnly || isEditing}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
                 >
                   <option value="">Seleccionar desarrollo...</option>
-                  {developments.map((dev: Development) => (
-                    <option key={dev.id} value={dev.id}>
-                      {dev.name}
-                    </option>
+                  {developments.map((dev: { id: string; name: string }) => (
+                    <option key={dev.id} value={dev.id}>{dev.name}</option>
                   ))}
                 </select>
                 {errors.developmentId && (
@@ -154,136 +187,144 @@ export const LotModal: React.FC<LotModalProps> = ({ isOpen, onClose, lot }) => {
                 )}
               </div>
 
-              {/* Lot Number and Block */}
+              {/* Lote # y Manzana */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Número de Lote"
                   {...register('lotNumber')}
                   error={errors.lotNumber?.message}
+                  disabled={readOnly}
                   required
                 />
-
                 <Input
-                  label="Bloque"
+                  label="Manzana"
                   {...register('block')}
                   error={errors.block?.message}
+                  disabled={readOnly}
                 />
               </div>
 
-              {/* Manzana */}
-              <Input
-                label="Manzana"
-                {...register('manzana')}
-                error={errors.manzana?.message}
-              />
-
-              {/* Area and Price */}
+              {/* Calle y Fase */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Área (m²)"
-                  type="number"
-                  step="0.01"
-                  {...register('area', { valueAsNumber: true })}
-                  error={errors.area?.message}
-                  required
+                  label="Calle"
+                  {...register('street')}
+                  error={errors.street?.message}
+                  disabled={readOnly}
                 />
+                <Input
+                  label="Fase"
+                  {...register('phase')}
+                  error={errors.phase?.message}
+                  disabled={readOnly}
+                />
+              </div>
 
+              {/* Modelo y Precio */}
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Modelo"
+                  {...register('model')}
+                  error={errors.model?.message}
+                  disabled={readOnly}
+                />
                 <Input
                   label="Precio"
                   type="number"
                   step="0.01"
                   {...register('price', { valueAsNumber: true })}
                   error={errors.price?.message}
+                  disabled={readOnly}
                   required
                 />
               </div>
 
-              {/* Dimensions - Front and Depth Meters */}
+              {/* Área terreno y Área construida */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Frente (metros)"
+                  label="Área Terreno (m²)"
                   type="number"
                   step="0.01"
-                  {...register('frontMeters', { valueAsNumber: true })}
-                  error={errors.frontMeters?.message}
+                  {...register('lotSize', { valueAsNumber: true })}
+                  error={errors.lotSize?.message}
+                  disabled={readOnly}
                 />
-
                 <Input
-                  label="Fondo (metros)"
+                  label="Área Construida (m²)"
                   type="number"
                   step="0.01"
-                  {...register('depthMeters', { valueAsNumber: true })}
-                  error={errors.depthMeters?.message}
+                  {...register('builtSize', { valueAsNumber: true })}
+                  error={errors.builtSize?.message}
+                  disabled={readOnly}
                 />
               </div>
 
-              {/* Position on Map */}
+              {/* Recámaras y Baños */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Posición X en Mapa"
+                  label="Recámaras"
                   type="number"
-                  {...register('positionX', { valueAsNumber: true })}
-                  error={errors.positionX?.message}
+                  {...register('bedrooms', { valueAsNumber: true })}
+                  error={errors.bedrooms?.message}
+                  disabled={readOnly}
                 />
-
                 <Input
-                  label="Posición Y en Mapa"
+                  label="Baños"
                   type="number"
-                  {...register('positionY', { valueAsNumber: true })}
-                  error={errors.positionY?.message}
+                  step="0.5"
+                  {...register('bathrooms', { valueAsNumber: true })}
+                  error={errors.bathrooms?.message}
+                  disabled={readOnly}
                 />
               </div>
 
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...register('status', { valueAsNumber: true })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  {Object.entries(LotStatusLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-                {errors.status && (
-                  <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
-                )}
+              {/* Estacionamientos y Pisos */}
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Estacionamientos"
+                  type="number"
+                  {...register('parkingSpaces', { valueAsNumber: true })}
+                  error={errors.parkingSpaces?.message}
+                  disabled={readOnly}
+                />
+                <Input
+                  label="Pisos"
+                  type="number"
+                  {...register('floors', { valueAsNumber: true })}
+                  error={errors.floors?.message}
+                  disabled={readOnly}
+                />
               </div>
 
-              {/* Notes */}
+              {/* Notas */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notas
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
                 <textarea
                   {...register('notes')}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Notas adicionales sobre el lote..."
+                  disabled={readOnly}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+                  placeholder="Notas adicionales..."
                 />
-                {errors.notes && (
-                  <p className="mt-1 text-sm text-red-600">{errors.notes.message}</p>
-                )}
               </div>
             </div>
 
-            {/* Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
+                {readOnly ? 'Cerrar' : 'Cancelar'}
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isEditing ? 'Actualizando...' : 'Creando...'}
-                  </>
-                ) : (
-                  <>{isEditing ? 'Actualizar' : 'Crear'}</>
-                )}
-              </Button>
+              {!readOnly && (
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {isEditing ? 'Actualizando...' : 'Creando...'}
+                    </>
+                  ) : (
+                    <>{isEditing ? 'Actualizar' : 'Crear'}</>
+                  )}
+                </Button>
+              )}
             </div>
           </form>
         </div>

@@ -1,21 +1,34 @@
 import { z } from 'zod';
-import { LotStatus } from '../types/lot.types';
 
 export const lotSchema = z.object({
+  developmentId: z.string().min(1, 'Debe seleccionar un desarrollo'),
   lotNumber: z.string().min(1, 'El número de lote es requerido').max(50),
-  block: z.string().optional(),
-  manzana: z.string().optional(),
-  area: z.number().min(0, 'El área debe ser mayor a 0'),
-  frontMeters: z.number().min(0).optional(),
-  depthMeters: z.number().min(0).optional(),
-  price: z.number().min(0, 'El precio debe ser mayor a 0'),
-  currency: z.string().optional(),
-  status: z.nativeEnum(LotStatus),
-  positionX: z.number().optional(),
-  positionY: z.number().optional(),
-  developmentId: z.string().uuid('Debe seleccionar un desarrollo válido'),
-  assignedUserId: z.string().uuid().optional(),
-  notes: z.string().optional(),
+  block: z.string().max(50).optional(),
+  street: z.string().max(100).optional(),
+  phase: z.string().max(50).optional(),
+  model: z.string().max(100).optional(),
+  lotSize: z.number().min(0).optional().nullable(),
+  builtSize: z.number().min(0).optional().nullable(),
+  bedrooms: z.number().int().min(0).optional().nullable(),
+  bathrooms: z.number().min(0).optional().nullable(),
+  parkingSpaces: z.number().int().min(0).optional().nullable(),
+  floors: z.number().int().min(0).optional().nullable(),
+  price: z.number().min(0, 'El precio debe ser mayor o igual a 0'),
+  notes: z.string().max(2000).optional(),
 });
 
 export type LotFormData = z.infer<typeof lotSchema>;
+
+export const bulkCreateLotsSchema = z.object({
+  developmentId: z.string().min(1, 'Debe seleccionar un desarrollo'),
+  lotNumberPrefix: z.string().min(1, 'El prefijo es requerido').max(20),
+  quantity: z.number().int().min(1, 'Mínimo 1 lote').max(500, 'Máximo 500 lotes'),
+  model: z.string().max(100).optional(),
+  price: z.number().min(0, 'El precio debe ser mayor o igual a 0'),
+  bedrooms: z.number().int().min(0).optional().nullable(),
+  bathrooms: z.number().min(0).optional().nullable(),
+  area: z.number().min(0).optional().nullable(),
+  floors: z.number().int().min(0).optional().nullable(),
+});
+
+export type BulkCreateLotsFormData = z.infer<typeof bulkCreateLotsSchema>;

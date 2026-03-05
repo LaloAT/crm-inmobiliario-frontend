@@ -1,49 +1,27 @@
 import axiosInstance from '../config/axios.config';
-import type { Lot, CreateLotDto, UpdateLotDto, LotStatus } from '../types/lot.types';
+import type {
+  Lot,
+  CreateLotRequest,
+  UpdateLotRequest,
+  UpdateLotStatusRequest,
+  BulkCreateLotsRequest,
+  LotFilters,
+  LotPaginatedResponse,
+  LotSummaryDto,
+} from '../types/lot.types';
 
 export const lotService = {
-  /**
-   * Obtener todos los lotes de un desarrollo
-   * Los lotes se obtienen a través del endpoint de developments
-   */
-  getAll: async (params?: {
-    page?: number;
-    limit?: number;
-    developmentId?: string;
-    status?: string;
-  }): Promise<{ data: Lot[]; total: number; page: number; limit: number }> => {
+  getAll: async (filters?: LotFilters): Promise<LotPaginatedResponse> => {
     try {
-      // Si hay developmentId, obtener los lotes de ese desarrollo específico
-      if (params?.developmentId) {
-        const response = await axiosInstance.get(`/api/v1/developments/${params.developmentId}`);
-        const lots = response.data.lots || [];
-        return {
-          data: lots,
-          total: lots.length,
-          page: 1,
-          limit: lots.length,
-        };
-      }
-
-      // Si no hay developmentId, obtener todos los developments y sus lotes
-      const devsResponse = await axiosInstance.get('/api/v1/developments');
-      const developments = Array.isArray(devsResponse.data)
-        ? devsResponse.data
-        : devsResponse.data.data || devsResponse.data.items || [];
-
-      // Recolectar todos los lotes de todos los developments
-      const allLots: Lot[] = [];
-      for (const dev of developments) {
-        if (dev.lots && Array.isArray(dev.lots)) {
-          allLots.push(...dev.lots);
-        }
-      }
-
+      const response = await axiosInstance.get('/api/v1/lots', {
+        params: filters,
+      });
       return {
-        data: allLots,
-        total: allLots.length,
-        page: 1,
-        limit: allLots.length,
+        items: response.data.items || [],
+        pageNumber: response.data.pageNumber || 1,
+        pageSize: response.data.pageSize || 10,
+        totalCount: response.data.totalCount || 0,
+        totalPages: response.data.totalPages || 0,
       };
     } catch (error) {
       console.error('Error fetching lots:', error);
@@ -51,16 +29,19 @@ export const lotService = {
     }
   },
 
-  /**
-   * Crear un nuevo lote en un desarrollo
-   */
-  create: async (data: CreateLotDto): Promise<Lot> => {
+  getById: async (id: string): Promise<Lot> => {
     try {
-      const { developmentId, ...lotData } = data;
-      const response = await axiosInstance.post(
-        `/api/v1/developments/${developmentId}/lots`,
-        lotData
-      );
+      const response = await axiosInstance.get(`/api/v1/lots/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lot:', error);
+      throw error;
+    }
+  },
+
+  create: async (data: CreateLotRequest): Promise<{ id: string }> => {
+    try {
+      const response = await axiosInstance.post('/api/v1/lots', data);
       return response.data;
     } catch (error) {
       console.error('Error creating lot:', error);
@@ -68,52 +49,52 @@ export const lotService = {
     }
   },
 
-  /**
-   * Actualizar el estado de un lote
-   */
-  updateStatus: async (lotId: string, status: LotStatus | string): Promise<Lot> => {
+  update: async (id: string, data: UpdateLotRequest): Promise<void> => {
     try {
-      const response = await axiosInstance.put(
-        `/api/v1/developments/lots/${lotId}/status`,
-        { status }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating lot status:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualizar un lote (usa updateStatus internamente)
-   */
-  update: async (id: string, data: UpdateLotDto): Promise<Lot> => {
-    try {
-      // Si solo se actualiza el estado, usar el endpoint específico
-      if (data.status && Object.keys(data).length === 1) {
-        return lotService.updateStatus(id, data.status);
-      }
-
-      // Para otras actualizaciones, necesitamos el developmentId
-      // Por ahora, solo soportamos actualización de status
-      console.warn('Solo se soporta actualización de status por el momento');
-      if (data.status) {
-        return lotService.updateStatus(id, data.status);
-      }
-
-      throw new Error('No se puede actualizar el lote sin developmentId');
+      await axiosInstance.put(`/api/v1/lots/${id}`, data);
     } catch (error) {
       console.error('Error updating lot:', error);
       throw error;
     }
   },
 
-  /**
-   * Nota: El backend no tiene endpoint para eliminar lotes individuales
-   * Los lotes se eliminan al eliminar el development
-   */
-  delete: async (): Promise<void> => {
-    console.warn('La eliminación de lotes no está soportada por el backend');
-    throw new Error('La eliminación de lotes no está soportada. Elimina el desarrollo completo.');
+  delete: async (id: string): Promise<void> => {
+    try {
+      await axiosInstance.delete(`/api/v1/lots/${id}`);
+    } catch (error) {
+      console.error('Error deleting lot:', error);
+      throw error;
+    }
+  },
+
+  bulkCreate: async (data: BulkCreateLotsRequest): Promise<{ ids: string[]; count: number }> => {
+    try {
+      const response = await axiosInstance.post('/api/v1/lots/bulk', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk creating lots:', error);
+      throw error;
+    }
+  },
+
+  getSummary: async (developmentId?: string): Promise<LotSummaryDto[]> => {
+    try {
+      const response = await axiosInstance.get('/api/v1/lots/summary', {
+        params: developmentId ? { developmentId } : undefined,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lots summary:', error);
+      throw error;
+    }
+  },
+
+  updateStatus: async (id: string, data: UpdateLotStatusRequest): Promise<void> => {
+    try {
+      await axiosInstance.put(`/api/v1/lots/${id}/status`, data);
+    } catch (error) {
+      console.error('Error updating lot status:', error);
+      throw error;
+    }
   },
 };
