@@ -41,6 +41,7 @@ export interface LetterOfInterestDto {
   validUntil?: string;
   signedAt?: string;
   fileUrl?: string;
+  signedDocumentFileName?: string;
   createdByUserId: string;
   createdByUserName?: string;
   createdAt: string;

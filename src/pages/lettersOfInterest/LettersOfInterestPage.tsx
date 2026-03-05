@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardBody, Button } from '../../components/ui';
-import { Plus, Loader2, Search, Download } from 'lucide-react';
+import { Plus, Loader2, Search, Download, FileCheck, X } from 'lucide-react';
 import { letterOfInterestService } from '../../services/letterOfInterest.service';
 import { LetterOfInterestModal } from './LetterOfInterestModal';
 import type { LetterOfInterestDto } from '../../types/letterOfInterest.types';
@@ -23,6 +23,10 @@ export const LettersOfInterestPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [signModalId, setSignModalId] = useState<string | null>(null);
+  const [signFile, setSignFile] = useState<File | null>(null);
+  const [viewingDocId, setViewingDocId] = useState<string | null>(null);
+  const signFileInputRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<{
     status?: LetterOfInterestStatus;
     type?: LetterOfInterestType;
@@ -48,8 +52,13 @@ export const LettersOfInterestPage: React.FC = () => {
   });
 
   const signMutation = useMutation({
-    mutationFn: letterOfInterestService.sign,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lettersOfInterest'] }),
+    mutationFn: ({ id, file }: { id: string; file?: File }) =>
+      letterOfInterestService.sign(id, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lettersOfInterest'] });
+      setSignModalId(null);
+      setSignFile(null);
+    },
   });
 
   const cancelMutation = useMutation({
@@ -90,9 +99,30 @@ export const LettersOfInterestPage: React.FC = () => {
     }
   };
 
-  const handleSign = (id: string) => {
-    if (window.confirm('¿Marcar como firmada esta carta de interés?')) {
-      signMutation.mutate(id);
+  const handleOpenSignModal = (id: string) => {
+    setSignModalId(id);
+    setSignFile(null);
+  };
+
+  const handleSignSubmit = (withFile: boolean) => {
+    if (!signModalId) return;
+    signMutation.mutate({ id: signModalId, file: withFile && signFile ? signFile : undefined });
+  };
+
+  const handleCloseSignModal = () => {
+    setSignModalId(null);
+    setSignFile(null);
+  };
+
+  const handleViewSignedDocument = async (id: string) => {
+    setViewingDocId(id);
+    try {
+      const { url } = await letterOfInterestService.getSignedDocument(id);
+      window.open(url, '_blank');
+    } catch {
+      // error already logged in service
+    } finally {
+      setViewingDocId(null);
     }
   };
 
@@ -349,7 +379,7 @@ export const LettersOfInterestPage: React.FC = () => {
                           {letter.status === LetterOfInterestStatus.Sent && (
                             <>
                               <button
-                                onClick={() => handleSign(letter.id)}
+                                onClick={() => handleOpenSignModal(letter.id)}
                                 className="px-3 py-1 text-sm rounded-md bg-green-600 text-white hover:bg-green-700"
                               >
                                 Firmar
@@ -366,6 +396,20 @@ export const LettersOfInterestPage: React.FC = () => {
                           {/* Signed actions */}
                           {letter.status === LetterOfInterestStatus.Signed && (
                             <>
+                              {letter.signedDocumentFileName && (
+                                <button
+                                  onClick={() => handleViewSignedDocument(letter.id)}
+                                  disabled={viewingDocId === letter.id}
+                                  className="px-3 py-1 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 inline-flex items-center gap-1"
+                                >
+                                  {viewingDocId === letter.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <FileCheck className="w-3.5 h-3.5" />
+                                  )}
+                                  Ver Documento
+                                </button>
+                              )}
                               {letter.dealId ? (
                                 <button
                                   onClick={() => navigate(`/deals/${letter.dealId}`)}
@@ -426,6 +470,92 @@ export const LettersOfInterestPage: React.FC = () => {
         letter={selectedLetter}
         readOnly={isViewMode}
       />
+
+      {/* Sign Modal */}
+      {signModalId && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={handleCloseSignModal}
+            />
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Firmar Carta de Interés
+                </h3>
+                <button
+                  onClick={handleCloseSignModal}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-4 space-y-4">
+                <p className="text-sm text-gray-600">
+                  Sube el documento firmado (opcional)
+                </p>
+                <input
+                  ref={signFileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setSignFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                />
+                {signFile && (
+                  <p className="text-xs text-gray-500">
+                    Archivo seleccionado: {signFile.name}
+                  </p>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseSignModal}
+                  disabled={signMutation.isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSignSubmit(false)}
+                  disabled={signMutation.isPending}
+                >
+                  {signMutation.isPending && !signFile ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Firmando...
+                    </>
+                  ) : (
+                    'Firmar sin documento'
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleSignSubmit(true)}
+                  disabled={!signFile || signMutation.isPending}
+                >
+                  {signMutation.isPending && signFile ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Subiendo...
+                    </>
+                  ) : (
+                    'Firmar y subir documento'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

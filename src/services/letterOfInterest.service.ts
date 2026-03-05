@@ -64,11 +64,29 @@ export const letterOfInterestService = {
     }
   },
 
-  sign: async (id: string): Promise<void> => {
+  sign: async (id: string, file?: File): Promise<void> => {
     try {
-      await axiosInstance.put(`/api/v1/letters-of-interest/${id}/sign`);
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        await axiosInstance.put(`/api/v1/letters-of-interest/${id}/sign`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        await axiosInstance.put(`/api/v1/letters-of-interest/${id}/sign`);
+      }
     } catch (error) {
       console.error('Error signing letter of interest:', error);
+      throw error;
+    }
+  },
+
+  getSignedDocument: async (id: string): Promise<{ url: string; fileName: string }> => {
+    try {
+      const response = await axiosInstance.get(`/api/v1/letters-of-interest/${id}/signed-document`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching signed document:', error);
       throw error;
     }
   },
