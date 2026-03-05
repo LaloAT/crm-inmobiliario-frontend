@@ -76,6 +76,9 @@ export const ShiftsPage: React.FC = () => {
   const [swapAgentId, setSwapAgentId] = useState('');
   const [swapReason, setSwapReason] = useState('');
 
+  // Day detail modal state
+  const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
+
   // Generate modal state
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [genMonth, setGenMonth] = useState(now.getMonth() + 1);
@@ -262,6 +265,34 @@ export const ShiftsPage: React.FC = () => {
     });
     return map;
   }, [filteredAssignments]);
+
+  // Get initials from full name (e.g. "Juan Pérez" → "JP")
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  // Assignments grouped by development for the day detail modal
+  const selectedDayAssignments = useMemo(() => {
+    if (!selectedDayDate) return [];
+    const dayItems = assignmentsByDate.get(selectedDayDate) || [];
+    const devMap = new Map<string, { developmentName: string; assignments: ShiftAssignmentDto[] }>();
+    dayItems.forEach((a) => {
+      if (!devMap.has(a.developmentId)) {
+        devMap.set(a.developmentId, { developmentName: a.developmentName, assignments: [] });
+      }
+      devMap.get(a.developmentId)!.assignments.push(a);
+    });
+    // Sort shifts within each development by shiftType (Morning=1 first)
+    devMap.forEach((group) => group.assignments.sort((x, y) => x.shiftType - y.shiftType));
+    return Array.from(devMap.values());
+  }, [selectedDayDate, assignmentsByDate]);
+
+  const formatDayModalTitle = (dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  };
 
   const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
   const getFirstDayOfWeek = (year: number, month: number) => new Date(year, month - 1, 1).getDay();
@@ -459,27 +490,44 @@ export const ShiftsPage: React.FC = () => {
                   const dayAssignments = assignmentsByDate.get(dateStr) || [];
                   const isToday =
                     day === now.getDate() && calMonth === now.getMonth() + 1 && calYear === now.getFullYear();
+                  const hasAssignments = dayAssignments.length > 0;
 
                   return (
                     <div
                       key={day}
-                      className={`min-h-[100px] p-1 border border-gray-100 ${isToday ? 'bg-primary-50' : 'hover:bg-gray-50'}`}
+                      onClick={() => hasAssignments && setSelectedDayDate(dateStr)}
+                      className={`min-h-[100px] p-1 border border-gray-100 transition-colors ${
+                        isToday ? 'bg-primary-50' : 'hover:bg-gray-50'
+                      } ${hasAssignments ? 'cursor-pointer' : ''}`}
                     >
-                      <div className={`text-sm font-medium mb-1 ${isToday ? 'text-primary-700 font-bold' : 'text-gray-700'}`}>
-                        {day}
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className={`text-sm font-medium ${isToday ? 'text-primary-700 font-bold' : 'text-gray-700'}`}>
+                          {day}
+                        </span>
+                        {hasAssignments && (
+                          <span className="text-[9px] text-gray-400 font-medium">{dayAssignments.length}</span>
+                        )}
                       </div>
-                      <div className="space-y-0.5">
-                        {dayAssignments.slice(0, 4).map((a) => (
-                          <div
-                            key={a.id}
-                            className={`text-[10px] px-1 py-0.5 rounded truncate cursor-default ${supervisorColorMap.get(a.supervisorId) || 'bg-gray-200 text-gray-800'}`}
-                            title={`${ShiftTypeLabels[a.shiftType]} — ${a.agentName} (Sup: ${a.supervisorName}) — ${a.developmentName} — ${AssignmentStatusLabels[a.status]}`}
-                          >
-                            {ShiftTypeLabels[a.shiftType].substring(0, 3)} · {a.agentName.split(' ')[0]}
+                      <div className="space-y-px">
+                        {dayAssignments.slice(0, 6).map((a) => {
+                          const supColor = supervisorColorMap.get(a.supervisorId) || 'bg-gray-200 text-gray-800';
+                          const dotColor = supColor.split(' ')[0]; // e.g. "bg-blue-200"
+                          return (
+                            <div
+                              key={a.id}
+                              className="flex items-center gap-1 text-[10px] leading-tight truncate"
+                              title={`${ShiftTypeLabels[a.shiftType]} — ${a.agentName} (Sup: ${a.supervisorName}) — ${a.developmentName}`}
+                            >
+                              <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
+                              <span className="text-gray-500">{a.shiftType === 1 ? 'M' : 'V'}</span>
+                              <span className="font-medium text-gray-700 truncate">{getInitials(a.agentName)}</span>
+                            </div>
+                          );
+                        })}
+                        {dayAssignments.length > 6 && (
+                          <div className="text-[10px] text-primary-600 font-medium px-0.5 hover:underline">
+                            +{dayAssignments.length - 6} más
                           </div>
-                        ))}
-                        {dayAssignments.length > 4 && (
-                          <div className="text-[10px] text-gray-500 px-1">+{dayAssignments.length - 4} más</div>
                         )}
                       </div>
                     </div>
@@ -833,6 +881,67 @@ export const ShiftsPage: React.FC = () => {
       {activeTab === 'calendar' && isSupervisorOrAbove && renderCalendarTab()}
       {activeTab === 'myShifts' && renderMyShiftsTab()}
       {activeTab === 'swaps' && isSupervisorOrAbove && renderSwapsTab()}
+
+      {/* Day Detail Modal */}
+      {selectedDayDate && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setSelectedDayDate(null)} />
+            <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 capitalize">
+                  {formatDayModalTitle(selectedDayDate)}
+                </h3>
+                <button onClick={() => setSelectedDayDate(null)} className="text-gray-400 hover:text-gray-500">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="px-6 py-4 overflow-y-auto space-y-5">
+                {selectedDayAssignments.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center py-4">No hay asignaciones para este día</p>
+                ) : (
+                  selectedDayAssignments.map((group) => (
+                    <div key={group.developmentName}>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-gray-400" />
+                        {group.developmentName}
+                      </h4>
+                      <div className="space-y-2 ml-4">
+                        {group.assignments.map((a) => {
+                          const supColor = supervisorColorMap.get(a.supervisorId) || SupervisorColors[0];
+                          return (
+                            <div key={a.id} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 text-[10px] rounded-full font-medium ${ShiftTypeColors[a.shiftType]}`}>
+                                  {ShiftTypeLabels[a.shiftType]}
+                                </span>
+                                <span className="font-medium text-gray-900">{a.agentName}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 text-[10px] rounded ${supColor}`}>
+                                  {a.supervisorName}
+                                </span>
+                                <span className={`px-1.5 py-0.5 text-[10px] rounded-full ${AssignmentStatusColors[a.status]}`}>
+                                  {AssignmentStatusLabels[a.status]}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-end">
+                <Button variant="outline" size="sm" onClick={() => setSelectedDayDate(null)}>
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Generate Schedule Modal */}
       {showGenerateModal && (
