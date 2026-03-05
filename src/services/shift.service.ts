@@ -1,155 +1,187 @@
 import axiosInstance from '../config/axios.config';
 import type {
-  Shift,
-  CreateShiftDto,
-  CreateBulkShiftsDto,
-  UpdateShiftDto,
-  CheckInDto,
-  CheckOutDto,
-  ShiftCalendar,
-  MyShifts,
-  ShiftFilters,
-  ShiftPaginatedResponse,
+  ShiftScheduleDto,
+  ShiftScheduleDetailDto,
+  ShiftAssignmentDto,
+  ShiftSwapRequestDto,
+  ShiftStatsDto,
+  GenerateScheduleRequest,
+  CreateSwapRequestPayload,
+  ScheduleFilters,
+  AssignmentFilters,
+  MyAssignmentFilters,
+  SwapFilters,
+  PaginatedResponse,
 } from '../types/shift.types';
 
 export const shiftService = {
-  /**
-   * Obtener todos los turnos con filtros
-   */
-  getAll: async (filters?: ShiftFilters): Promise<ShiftPaginatedResponse> => {
+  // ===========================
+  // SHIFT SCHEDULES
+  // ===========================
+
+  getSchedules: async (filters?: ScheduleFilters): Promise<PaginatedResponse<ShiftScheduleDto>> => {
     try {
-      const response = await axiosInstance.get('/api/v1/shifts', {
+      const response = await axiosInstance.get('/api/v1/shift-schedules', {
         params: filters,
       });
-
       return {
         items: response.data.items || [],
         pageNumber: response.data.pageNumber || 1,
-        pageSize: response.data.pageSize || 10,
+        pageSize: response.data.pageSize || 20,
         totalCount: response.data.totalCount || 0,
         totalPages: response.data.totalPages || 0,
       };
     } catch (error) {
-      console.error('Error fetching shifts:', error);
+      console.error('Error fetching shift schedules:', error);
       throw error;
     }
   },
 
-  /**
-   * Obtener un turno por ID
-   */
-  getById: async (id: string): Promise<Shift> => {
+  getScheduleById: async (id: string): Promise<ShiftScheduleDetailDto> => {
     try {
-      const response = await axiosInstance.get(`/api/v1/shifts/${id}`);
+      const response = await axiosInstance.get(`/api/v1/shift-schedules/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching shift:', error);
+      console.error('Error fetching shift schedule:', error);
       throw error;
     }
   },
 
-  /**
-   * Crear un turno individual
-   */
-  create: async (data: CreateShiftDto): Promise<Shift> => {
+  generateSchedule: async (data: GenerateScheduleRequest): Promise<{ id: string }> => {
     try {
-      const response = await axiosInstance.post('/api/v1/shifts', data);
+      const response = await axiosInstance.post('/api/v1/shift-schedules/generate', data);
       return response.data;
     } catch (error) {
-      console.error('Error creating shift:', error);
+      console.error('Error generating shift schedule:', error);
       throw error;
     }
   },
 
-  /**
-   * Crear turnos en lote (múltiples días)
-   */
-  createBulk: async (data: CreateBulkShiftsDto): Promise<Shift[]> => {
+  publishSchedule: async (id: string): Promise<void> => {
     try {
-      const response = await axiosInstance.post('/api/v1/shifts/bulk', data);
-      return response.data.items || response.data || [];
+      await axiosInstance.put(`/api/v1/shift-schedules/${id}/publish`);
     } catch (error) {
-      console.error('Error creating bulk shifts:', error);
+      console.error('Error publishing shift schedule:', error);
       throw error;
     }
   },
 
-  /**
-   * Actualizar un turno
-   */
-  update: async (id: string, data: UpdateShiftDto): Promise<Shift> => {
+  lockSchedule: async (id: string): Promise<void> => {
     try {
-      const response = await axiosInstance.put(`/api/v1/shifts/${id}`, data);
-      return response.data;
+      await axiosInstance.put(`/api/v1/shift-schedules/${id}/lock`);
     } catch (error) {
-      console.error('Error updating shift:', error);
+      console.error('Error locking shift schedule:', error);
       throw error;
     }
   },
 
-  /**
-   * Cancelar un turno
-   */
-  cancel: async (id: string): Promise<Shift> => {
+  getStats: async (month: number, year: number): Promise<ShiftStatsDto[]> => {
     try {
-      const response = await axiosInstance.put(`/api/v1/shifts/${id}/cancel`);
-      return response.data;
-    } catch (error) {
-      console.error('Error cancelling shift:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Registrar entrada (check-in)
-   */
-  checkIn: async (id: string, data?: CheckInDto): Promise<Shift> => {
-    try {
-      const response = await axiosInstance.put(`/api/v1/shifts/${id}/checkin`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Error checking in:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Registrar salida (check-out)
-   */
-  checkOut: async (id: string, data?: CheckOutDto): Promise<Shift> => {
-    try {
-      const response = await axiosInstance.put(`/api/v1/shifts/${id}/checkout`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Error checking out:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener calendario mensual de turnos
-   */
-  getCalendar: async (month: number, year: number): Promise<ShiftCalendar> => {
-    try {
-      const response = await axiosInstance.get('/api/v1/shifts/calendar', {
+      const response = await axiosInstance.get('/api/v1/shift-schedules/stats', {
         params: { month, year },
       });
       return response.data;
     } catch (error) {
-      console.error('Error fetching shift calendar:', error);
+      console.error('Error fetching shift stats:', error);
       throw error;
     }
   },
 
-  /**
-   * Obtener mis turnos (del usuario autenticado)
-   */
-  getMy: async (): Promise<MyShifts> => {
+  // ===========================
+  // SHIFT ASSIGNMENTS
+  // ===========================
+
+  getAssignments: async (filters?: AssignmentFilters): Promise<PaginatedResponse<ShiftAssignmentDto>> => {
     try {
-      const response = await axiosInstance.get('/api/v1/shifts/my');
+      const response = await axiosInstance.get('/api/v1/shift-assignments', {
+        params: filters,
+      });
+      return {
+        items: response.data.items || [],
+        pageNumber: response.data.pageNumber || 1,
+        pageSize: response.data.pageSize || 20,
+        totalCount: response.data.totalCount || 0,
+        totalPages: response.data.totalPages || 0,
+      };
+    } catch (error) {
+      console.error('Error fetching shift assignments:', error);
+      throw error;
+    }
+  },
+
+  getMyAssignments: async (filters?: MyAssignmentFilters): Promise<PaginatedResponse<ShiftAssignmentDto>> => {
+    try {
+      const response = await axiosInstance.get('/api/v1/shift-assignments/my', {
+        params: filters,
+      });
+      return {
+        items: response.data.items || [],
+        pageNumber: response.data.pageNumber || 1,
+        pageSize: response.data.pageSize || 20,
+        totalCount: response.data.totalCount || 0,
+        totalPages: response.data.totalPages || 0,
+      };
+    } catch (error) {
+      console.error('Error fetching my shift assignments:', error);
+      throw error;
+    }
+  },
+
+  attendAssignment: async (id: string): Promise<void> => {
+    try {
+      await axiosInstance.put(`/api/v1/shift-assignments/${id}/attend`);
+    } catch (error) {
+      console.error('Error attending shift assignment:', error);
+      throw error;
+    }
+  },
+
+  // ===========================
+  // SHIFT SWAPS
+  // ===========================
+
+  getSwapRequests: async (filters?: SwapFilters): Promise<PaginatedResponse<ShiftSwapRequestDto>> => {
+    try {
+      const response = await axiosInstance.get('/api/v1/shift-swaps', {
+        params: filters,
+      });
+      return {
+        items: response.data.items || [],
+        pageNumber: response.data.pageNumber || 1,
+        pageSize: response.data.pageSize || 20,
+        totalCount: response.data.totalCount || 0,
+        totalPages: response.data.totalPages || 0,
+      };
+    } catch (error) {
+      console.error('Error fetching swap requests:', error);
+      throw error;
+    }
+  },
+
+  createSwapRequest: async (data: CreateSwapRequestPayload): Promise<{ id: string }> => {
+    try {
+      const response = await axiosInstance.post('/api/v1/shift-swaps', data);
       return response.data;
     } catch (error) {
-      console.error('Error fetching my shifts:', error);
+      console.error('Error creating swap request:', error);
+      throw error;
+    }
+  },
+
+  approveSwap: async (id: string): Promise<void> => {
+    try {
+      await axiosInstance.put(`/api/v1/shift-swaps/${id}/approve`);
+    } catch (error) {
+      console.error('Error approving swap:', error);
+      throw error;
+    }
+  },
+
+  rejectSwap: async (id: string): Promise<void> => {
+    try {
+      await axiosInstance.put(`/api/v1/shift-swaps/${id}/reject`);
+    } catch (error) {
+      console.error('Error rejecting swap:', error);
       throw error;
     }
   },
